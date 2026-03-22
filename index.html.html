@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RD Calculator — Aambika Food & Beverages LLP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh;color:#1a2332}
+.container{max-width:1250px;margin:0 auto;padding:16px}
+.header{text-align:center;padding:22px 0 14px}
+.header h1{font-size:24px;color:#1565c0;letter-spacing:.5px;margin-bottom:3px}
+.header h2{font-size:12px;color:#5f7a95;font-weight:400}
+.card{background:#fff;border:1px solid #dce3ea;border-radius:10px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.card h3{color:#1565c0;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.card h3 .num{background:#1565c0;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.upload-row{display:flex;gap:14px}
+.upload-row .col{flex:1}
+.upload-area{border:2px dashed #b0c4de;border-radius:8px;padding:22px 12px;text-align:center;cursor:pointer;transition:all .2s;background:#fafcff}
+.upload-area:hover,.upload-area.dragover{border-color:#1565c0;background:#eef4fb}
+.upload-area.done{border-color:#2e7d32;background:#f1f8f2}
+.upload-area input{display:none}
+.upload-area .icon{font-size:28px;margin-bottom:4px}
+.upload-area .main-text{font-size:13px;color:#37474f;font-weight:600}
+.upload-area .sub-text{font-size:10px;color:#78909c;margin-top:2px}
+.upload-area .file-name{color:#2e7d32;font-weight:700;margin-top:6px;font-size:12px}
+
+/* Month selector */
+.month-mode{display:flex;gap:8px;margin-bottom:12px}
+.month-mode label{display:flex;align-items:center;gap:5px;padding:8px 16px;border:2px solid #dce3ea;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#546e7a;transition:all .2s}
+.month-mode label:hover{border-color:#1565c0;color:#1565c0}
+.month-mode label.active{border-color:#1565c0;background:#eef4fb;color:#1565c0}
+.month-mode input{position:absolute;opacity:0;width:0;height:0}
+
+/* Rate mode toggle */
+.rate-mode{display:flex;gap:6px;margin:8px 0 12px}
+.rate-mode-btn{padding:7px 16px;border:2px solid #dce3ea;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#546e7a;transition:all .2s;background:#fff}
+.rate-mode-btn:hover{border-color:#1565c0;color:#1565c0}
+.rate-mode-btn.active{border-color:#1565c0;background:#eef4fb;color:#1565c0}
+
+.month-chips{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0}
+.month-chip{padding:6px 12px;border:1px solid #dce3ea;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#546e7a;transition:all .2s;user-select:none}
+.month-chip:hover{border-color:#1565c0}
+.month-chip.selected{background:#1565c0;color:#fff;border-color:#1565c0}
+.year-select{margin:6px 0;display:flex;align-items:center;gap:8px}
+.year-select select{padding:5px 10px;border:1px solid #c5d3e0;border-radius:5px;font-size:12px;background:#f5f8fc}
+.year-select label{font-size:12px;font-weight:600;color:#546e7a}
+
+/* Rate tables */
+.rate-section{margin-top:10px}
+.rate-section h4{font-size:13px;color:#1565c0;margin:10px 0 6px;font-weight:700}
+.same-rate-toggle{display:flex;align-items:center;gap:6px;margin:6px 0 10px;font-size:12px;color:#546e7a;cursor:pointer}
+.same-rate-toggle input{accent-color:#1565c0}
+.rate-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+.rate-tbl th{background:#e3edf7;color:#1565c0;padding:7px 8px;text-align:center;font-weight:700;border:1px solid #d0dbe6;font-size:11px;white-space:nowrap}
+.rate-tbl td{padding:5px 6px;text-align:center;border:1px solid #e0e8f0;background:#fff}
+.rate-tbl td:first-child{text-align:left;font-weight:600;color:#37474f}
+.rate-tbl input{width:72px;background:#f5f8fc;border:1px solid #c5d3e0;border-radius:4px;color:#1a2332;padding:4px 6px;font-size:11px;text-align:center}
+.rate-tbl input:focus{outline:none;border-color:#1565c0;background:#fff}
+
+.btn-calc{width:100%;padding:13px;font-size:16px;font-weight:700;border:none;border-radius:8px;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+.btn-calc:not(:disabled){background:linear-gradient(135deg,#1976d2,#1565c0);color:#fff;box-shadow:0 2px 10px rgba(21,101,192,.2)}
+.btn-calc:not(:disabled):hover{box-shadow:0 4px 16px rgba(21,101,192,.3)}
+.btn-calc:disabled{background:#cfd8dc;color:#90a4ae;cursor:not-allowed}
+
+.btn-download{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;box-shadow:0 2px 10px rgba(46,125,50,.2);transition:all .2s}
+.btn-download:hover{box-shadow:0 4px 14px rgba(46,125,50,.3)}
+
+#results{display:none}
+.verdict-box{border-radius:10px;padding:18px 20px;margin-bottom:14px;text-align:center}
+.verdict-box.surplus{background:linear-gradient(135deg,#e8f5e9,#f1f8f2);border:2px solid #66bb6a}
+.verdict-box.deficit{background:linear-gradient(135deg,#ffebee,#fef5f5);border:2px solid #ef5350}
+.verdict-box .verdict-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.verdict-box.surplus .verdict-title{color:#2e7d32}
+.verdict-box.deficit .verdict-title{color:#c62828}
+.verdict-box .verdict-amount{font-size:28px;font-weight:800;margin:4px 0}
+.verdict-box.surplus .verdict-amount{color:#2e7d32}
+.verdict-box.deficit .verdict-amount{color:#c62828}
+.verdict-box .verdict-detail{font-size:12px;color:#546e7a;margin-top:2px}
+
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.summary-box{background:#f5f8fc;border:1px solid #dce3ea;border-radius:8px;padding:12px;text-align:center}
+.summary-box .label{font-size:9px;color:#78909c;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.summary-box .value{font-size:17px;font-weight:800;margin-top:3px;color:#1a2332}
+.summary-box.green{border-color:#a5d6a7;background:#f1f8f2} .summary-box.green .value{color:#2e7d32}
+.summary-box.red{border-color:#ef9a9a;background:#fef5f5} .summary-box.red .value{color:#c62828}
+.summary-box.blue{border-color:#90caf9;background:#eef4fb} .summary-box.blue .value{color:#1565c0}
+
+.tabs{display:flex;gap:2px;border-bottom:2px solid #dce3ea}
+.tab{padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;color:#78909c;border-radius:6px 6px 0 0;transition:all .2s}
+.tab:hover{color:#1565c0;background:#eef4fb}
+.tab.active{color:#1565c0;background:#fff;border:1px solid #dce3ea;border-bottom:2px solid #fff;margin-bottom:-2px}
+.tab-content{display:none;padding:12px 0 0} .tab-content.active{display:block}
+
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{background:#e3edf7;color:#1565c0;padding:7px;text-align:center;font-weight:700;border:1px solid #d0dbe6;white-space:nowrap;font-size:10px}
+.data-table td{padding:5px 6px;border:1px solid #e0e8f0;text-align:right;background:#fff}
+.data-table td:first-child,.data-table td:nth-child(2){text-align:left}
+.data-table tr.total-row{background:#e8f0fe;font-weight:700}
+.data-table tr.total-row td{border-bottom:2px solid #1565c0}
+.data-table tr.month-header td{font-weight:700;color:#fff;text-align:left;background:#1976d2}
+.data-table tr:hover:not(.total-row):not(.month-header) td{background:#f5f8fc}
+.pos{color:#2e7d32;font-weight:700} .neg{color:#c62828;font-weight:700}
+
+.status-bar{border-radius:6px;padding:8px 14px;margin:10px 0;font-size:12px;display:none}
+.status-bar.show{display:block}
+.status-bar.error{background:#fef5f5;border:1px solid #ef9a9a;color:#c62828}
+.status-bar.success{background:#f1f8f2;border:1px solid #a5d6a7;color:#2e7d32}
+.status-bar.info{background:#eef4fb;border:1px solid #90caf9;color:#1565c0}
+.note{font-size:10px;color:#90a4ae;margin-top:4px}
+.section-label{font-size:12px;font-weight:700;color:#1565c0;margin:10px 0 4px}
+.hidden{display:none!important}
+
+@media(max-width:768px){.upload-row{flex-direction:column}.summary-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Rate Difference Calculator</h1>
+    <h2>M/s Aambika Food & Beverages LLP — Co-Packer of Bisleri International Pvt. Ltd.</h2>
+  </div>
+
+  <!-- STEP 1: Month Selection -->
+  <div class="card">
+    <h3><span class="num">1</span> Select Period</h3>
+    <div class="month-mode" id="monthMode">
+      <label class="active" onclick="setMode('single')"><input type="radio" name="mode" value="single" checked><span>Single Month</span></label>
+      <label onclick="setMode('multi')"><input type="radio" name="mode" value="multi"><span>Multiple Months</span></label>
+    </div>
+    <div class="year-select">
+      <label>Year:</label>
+      <select id="yearSelect" onchange="buildMonthChips()">
+        <option value="25">2025</option>
+        <option value="26" selected>2026</option>
+        <option value="27">2027</option>
+      </select>
+    </div>
+    <div id="monthArea">
+      <div class="month-chips" id="monthChips"></div>
+      <p class="note" id="monthNote">Click to select month</p>
+    </div>
+  </div>
+
+  <!-- STEP 2: Upload -->
+  <div class="card">
+    <h3><span class="num">2</span> Upload Tally Exports</h3>
+    <div class="upload-row">
+      <div class="col">
+        <div class="upload-area" id="purchaseUpload" onclick="document.getElementById('purchaseFile').click()">
+          <input type="file" id="purchaseFile" accept=".xlsx,.xls" onchange="handleFile(this,'purchase')">
+          <div class="icon">📦</div>
+          <div class="main-text">Purchase Register (RMPM)</div>
+          <div class="sub-text">Tally Export — .xlsx</div>
+          <div class="file-name" id="purchaseFileName"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="upload-area" id="salesUpload" onclick="document.getElementById('salesFile').click()">
+          <input type="file" id="salesFile" accept=".xlsx,.xls" onchange="handleFile(this,'sales')">
+          <div class="icon">💰</div>
+          <div class="main-text">Sales Register</div>
+          <div class="sub-text">Tally Export — .xlsx</div>
+          <div class="file-name" id="salesFileName"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Billing Rate & Conversion Rate -->
+  <div class="card">
+    <h3><span class="num">3</span> Billing Rate (Without GST) & Conversion Rate</h3>
+
+    <div class="rate-section">
+      <h4>Billing Rate ₹/Case (Without GST)</h4>
+      <div id="sameRateArea" class="hidden">
+        <div class="rate-mode">
+          <div class="rate-mode-btn active" id="btnSameRate" onclick="setRateMode('same')">Same Rate for All Months</div>
+          <div class="rate-mode-btn" id="btnDiffRate" onclick="setRateMode('diff')">Different Rate Each Month</div>
+        </div>
+      </div>
+
+      <!-- Same rate table (single set of rates) -->
+      <div id="billingTableSame">
+        <table class="rate-tbl">
+          <thead><tr><th>SKU</th><th>Pack</th><th>Billing Rate ₹/Case (Excl. GST)</th></tr></thead>
+          <tbody id="billingSameBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Month-wise rate table (different rates per month) -->
+      <div id="billingTableMulti" class="hidden" style="overflow-x:auto;">
+        <table class="rate-tbl" id="billingMultiTbl"></table>
+      </div>
+    </div>
+
+    <div class="rate-section">
+      <h4>Conversion Rate ₹/Case</h4>
+      <table class="rate-tbl">
+        <thead><tr><th>SKU</th><th>Pack</th><th>Conversion Rate ₹/Case</th></tr></thead>
+        <tbody id="convBody"></tbody>
+      </table>
+    </div>
+    <p class="note">Billing rate = Rate at which Bisleri is billed per case (excluding GST). Edit if needed.</p>
+  </div>
+
+  <!-- STEP 4: Calculate -->
+  <div class="card" style="text-align:center">
+    <h3><span class="num">4</span> Calculate</h3>
+    <button class="btn-calc" id="calcBtn" disabled onclick="calculate()">CALCULATE RD WORKING</button>
+    <div class="status-bar" id="statusBar"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <!-- Verdict -->
+    <div class="verdict-box" id="verdictBox">
+      <div class="verdict-title" id="verdictTitle"></div>
+      <div class="verdict-amount" id="verdictAmt"></div>
+      <div class="verdict-detail" id="verdictDetail"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0">Results</h3>
+        <button class="btn-download" onclick="downloadExcel()">⬇ Download Excel</button>
+      </div>
+      <div style="height:10px"></div>
+      <div class="summary-grid" id="summaryGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="tabs" id="tabBar"></div>
+      <div id="tabContents"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======================== CONSTANTS ========================
+const SKUS=['20Ltr','10Ltr','5Ltr','2Ltr','1Ltr','500ml','250ml','200ml'];
+const PACKS={'20Ltr':1,'10Ltr':1,'5Ltr':1,'2Ltr':9,'1Ltr':12,'500ml':24,'250ml':48,'200ml':48};
+const CONV_DEF={'20Ltr':18,'10Ltr':12,'5Ltr':7,'2Ltr':23,'1Ltr':20,'500ml':26,'250ml':45.75,'200ml':44};
+const BILL_DEF={'20Ltr':110,'10Ltr':67,'5Ltr':38,'2Ltr':252,'1Ltr':186,'500ml':204,'250ml':228,'200ml':220};
+const BOM_LABEL={'2Ltr':9/2050,'1Ltr':12/3030,'500ml':24/3800,'250ml':48/7800,'200ml':48/8600};
+const BOM_SHRINK={'1Ltr':1/27,'2Ltr':1/15,'500ml':1/27,'200ml':1/24,'250ml':1/20};
+const BOM_LABEL_JAR={'5Ltr':1/1000,'10Ltr':1/850,'20Ltr':1/750};
+const MAT_SKU_MAP={
+  '200 Ml Pet Preforms - 7.25 Gm':[['200ml','Preform']],'250 Ml Pet Preforms - 8 gm':[['250ml','Preform']],
+  '500 Ml Pet Preforms - 11 gm':[['500ml','Preform']],'500ml Pet Preform -12.6gms':[['500ml','Preform']],
+  '1 Ltr Preform 18 Gm':[['1Ltr','Preform']],'1Ltr Pet Preform - 20gms':[['1Ltr','Preform']],
+  '2 Ltr Pet Preform - 30 Gms':[['2Ltr','Preform']],'2Ltr Pet Preform - 32GMS':[['2Ltr','Preform']],
+  '200ml BOPP Labels':[['200ml','Label']],'250ml BOPP Labels':[['250ml','Label']],
+  '500ml BOPP Labels':[['500ml','Label']],'1Ltr BOPP Labels':[['1Ltr','Label']],
+  '2Ltr BOPP Labels':[['2Ltr','Label']],'5 Ltr Labels':[['5Ltr','Label']],
+  '10Ltr Labels':[['10Ltr','Label']],'20Ltr Labels':[['20Ltr','Label']],
+  '26/22 Bisleri Caps':[['200ml','Cap'],['250ml','Cap'],['500ml','Cap'],['1Ltr','Cap'],['2Ltr','Cap']],
+  '27mm Bisleri Caps':[['200ml','Cap'],['250ml','Cap'],['500ml','Cap'],['1Ltr','Cap'],['2Ltr','Cap']],
+  '10Ltr / 5 Ltr Caps  = 4.5 Gms(48MM)':[['5Ltr','Cap'],['10Ltr','Cap']],
+  '10Ltr / 5 Ltr Caps = 4.5 Gms(48MM)':[['5Ltr','Cap'],['10Ltr','Cap']],
+  '20Ltr Bisleri Caps':[['20Ltr','Cap']],
+  '1Ltr Bisleri LDPE Shrink Film':[['1Ltr','Shrink']],
+  '500Ml Bisleri LDPE Shrink Film - Plain':[['500ml','Shrink']],
+  '2Ltr Bisleri LDPE Shrink Film - Plain':[['2Ltr','Shrink']],
+  '250ml / 200ml Bisleri LDPE Shrink Film - Plain':[['250ml','Shrink'],['200ml','Shrink']],
+  '5 Ltr Bisleri Blown Jars':[['5Ltr','Jar']],'10 Ltr Bisleri Blown Jars':[['10Ltr','Jar']],
+  '5 Ltr Handle = 6.5 Gms':[['5Ltr','Handle']],'10 Ltr Handle - 12.5 Gms':[['10Ltr','Handle']],
+  '2 Ltr. Handles':[['2Ltr','Handle']],'20Ltr Bisleri Sleeves':[['20Ltr','Sleeve']],
+};
+const PET_CAPS=['26/22 Bisleri Caps','27mm Bisleri Caps'];
+const JAR_CAPS=['10Ltr / 5 Ltr Caps  = 4.5 Gms(48MM)','10Ltr / 5 Ltr Caps = 4.5 Gms(48MM)'];
+const SHRINK_250_200=['250ml / 200ml Bisleri LDPE Shrink Film - Plain'];
+const SKU_MATS={
+  '200ml':{Preform:['200 Ml Pet Preforms - 7.25 Gm'],Label:['200ml BOPP Labels']},
+  '250ml':{Preform:['250 Ml Pet Preforms - 8 gm'],Label:['250ml BOPP Labels']},
+  '500ml':{Preform:['500 Ml Pet Preforms - 11 gm','500ml Pet Preform -12.6gms'],Label:['500ml BOPP Labels'],Shrink:['500Ml Bisleri LDPE Shrink Film - Plain']},
+  '1Ltr':{Preform:['1 Ltr Preform 18 Gm','1Ltr Pet Preform - 20gms'],Label:['1Ltr BOPP Labels'],Shrink:['1Ltr Bisleri LDPE Shrink Film']},
+  '2Ltr':{Preform:['2 Ltr Pet Preform - 30 Gms','2Ltr Pet Preform - 32GMS'],Label:['2Ltr BOPP Labels'],Shrink:['2Ltr Bisleri LDPE Shrink Film - Plain'],Handle:['2 Ltr. Handles']},
+  '5Ltr':{Label:['5 Ltr Labels'],Jar:['5 Ltr Bisleri Blown Jars'],Handle:['5 Ltr Handle = 6.5 Gms']},
+  '10Ltr':{Label:['10Ltr Labels'],Jar:['10 Ltr Bisleri Blown Jars'],Handle:['10 Ltr Handle - 12.5 Gms']},
+  '20Ltr':{Label:['20Ltr Labels'],Cap:['20Ltr Bisleri Caps'],Sleeve:['20Ltr Bisleri Sleeves']},
+};
+const COMPS=['Preform','Label','Cap','Shrink','Sleeve','Handle','Jar'];
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const mnMap={0:'Jan',1:'Feb',2:'Mar',3:'Apr',4:'May',5:'Jun',6:'Jul',7:'Aug',8:'Sep',9:'Oct',10:'Nov',11:'Dec'};
+
+function getMonthStr(dt){if(!dt||!(dt instanceof Date)||isNaN(dt.getTime()))return null;return`${mnMap[dt.getMonth()]}'${String(dt.getFullYear()).slice(2)}`}
+function parseDate(v){if(!v)return null;if(v instanceof Date&&!isNaN(v.getTime()))return v;const s=String(v).trim();let d=new Date(s);if(!isNaN(d.getTime()))return d;const m=s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);if(m){let yr=parseInt(m[3]);if(yr<100)yr+=2000;d=new Date(yr,parseInt(m[2])-1,parseInt(m[1]));if(!isNaN(d.getTime()))return d}return null}
+function parseNum(v){if(v===null||v===undefined||v==='')return null;const n=parseFloat(String(v).replace(/,/g,''));return isNaN(n)?null:n}
+function getSku(desc){const d=String(desc).trim();if(/^0[1-8]\s*-/.test(d)){if(d.startsWith('01'))return'20Ltr';if(d.startsWith('02'))return'10Ltr';if(d.startsWith('03'))return'5Ltr';if(d.startsWith('04'))return'2Ltr';if(d.startsWith('05'))return'1Ltr';if(d.startsWith('06'))return'500ml';if(d.startsWith('07'))return'250ml';if(d.startsWith('08'))return'200ml'}return null}
+function sortMonths(arr){return arr.sort((a,b)=>{const ya=parseInt('20'+a.slice(4)),yb=parseInt('20'+b.slice(4));if(ya!==yb)return ya-yb;return MN.indexOf(a.slice(0,3))-MN.indexOf(b.slice(0,3))})}
+
+// ======================== STATE ========================
+let purchaseData=null,salesData=null,selectedMonths=[],calcResults=null;
+
+// ======================== MONTH SELECTION ========================
+function getMode(){return document.querySelector('input[name="mode"]:checked').value}
+
+function buildMonthChips(){
+  const yr=document.getElementById('yearSelect').value;
+  const div=document.getElementById('monthChips');
+  div.innerHTML='';
+  MN.forEach(m=>{
+    const chip=document.createElement('div');
+    chip.className='month-chip';
+    chip.textContent=m+"'"+yr;
+    chip.dataset.month=m+"'"+yr;
+    if(selectedMonths.includes(m+"'"+yr))chip.classList.add('selected');
+    chip.onclick=()=>toggleMonth(chip);
+    div.appendChild(chip);
+  });
+  updateBillingMultiTable();
+  checkReady();
+}
+
+function toggleMonth(chip){
+  const mode=getMode();
+  const m=chip.dataset.month;
+  if(mode==='single'){
+    selectedMonths=[m];
+    document.querySelectorAll('.month-chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected');
+  }else{
+    if(selectedMonths.includes(m)){selectedMonths=selectedMonths.filter(x=>x!==m);chip.classList.remove('selected')}
+    else{selectedMonths.push(m);chip.classList.add('selected');selectedMonths=sortMonths(selectedMonths)}
+  }
+  if(rateMode==='diff')updateBillingMultiTable();
+  checkReady();
+}
+
+let rateMode='same'; // 'same' or 'diff'
+
+function setMode(mode){
+  document.querySelectorAll('#monthMode label').forEach(l=>l.classList.remove('active'));
+  document.querySelector(`#monthMode input[value="${mode}"]`).checked=true;
+  document.querySelector(`#monthMode input[value="${mode}"]`).parentElement.classList.add('active');
+  if(mode==='single'){
+    if(selectedMonths.length>1)selectedMonths=[selectedMonths[0]];
+    document.querySelectorAll('.month-chip').forEach(c=>{c.classList.toggle('selected',selectedMonths.includes(c.dataset.month))});
+    document.getElementById('sameRateArea').classList.add('hidden');
+    document.getElementById('billingTableMulti').classList.add('hidden');
+    document.getElementById('billingTableSame').classList.remove('hidden');
+    document.getElementById('monthNote').textContent='Click to select month';
+  }else{
+    document.getElementById('sameRateArea').classList.remove('hidden');
+    setRateMode(rateMode);
+    document.getElementById('monthNote').textContent='Click to select multiple months';
+  }
+  checkReady();
+}
+
+function setRateMode(mode){
+  rateMode=mode;
+  document.getElementById('btnSameRate').classList.toggle('active',mode==='same');
+  document.getElementById('btnDiffRate').classList.toggle('active',mode==='diff');
+  document.getElementById('billingTableSame').classList.toggle('hidden',mode==='diff');
+  document.getElementById('billingTableMulti').classList.toggle('hidden',mode==='same');
+  if(mode==='diff')updateBillingMultiTable();
+}
+
+// ======================== BILLING RATE TABLES ========================
+function initBillingSameTable(){
+  const body=document.getElementById('billingSameBody');
+  body.innerHTML='';
+  SKUS.forEach(sku=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${sku}</td><td>${PACKS[sku]}</td><td><input type="number" step="0.01" id="bill_s_${sku}" value="${BILL_DEF[sku]}"></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function updateBillingMultiTable(){
+  const tbl=document.getElementById('billingMultiTbl');
+  const months=sortMonths([...selectedMonths]);
+  if(months.length===0){tbl.innerHTML='<tr><td style="padding:12px;color:#90a4ae;text-align:center">Select months first</td></tr>';return}
+  let h='<thead><tr><th>SKU</th><th>Pack</th>';
+  months.forEach(m=>{h+=`<th>${m}</th>`});
+  h+='</tr></thead><tbody>';
+  SKUS.forEach(sku=>{
+    h+=`<tr><td>${sku}</td><td>${PACKS[sku]}</td>`;
+    months.forEach(m=>{h+=`<td><input type="number" step="0.01" id="bill_m_${sku}_${m.replace("'","_")}" value="${BILL_DEF[sku]}"></td>`});
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  tbl.innerHTML=h;
+}
+
+// Rate mode is now handled by setRateMode()
+
+function initConvTable(){
+  const body=document.getElementById('convBody');
+  body.innerHTML='';
+  SKUS.forEach(sku=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${sku}</td><td>${PACKS[sku]}</td><td><input type="number" step="0.01" id="conv_${sku}" value="${CONV_DEF[sku]}"></td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ======================== FILE HANDLING ========================
+function handleFile(input,type){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    if(type==='purchase'){purchaseData=wb;document.getElementById('purchaseFileName').textContent=file.name;document.getElementById('purchaseUpload').classList.add('done')}
+    else{salesData=wb;document.getElementById('salesFileName').textContent=file.name;document.getElementById('salesUpload').classList.add('done')}
+    checkReady();
+  };
+  reader.readAsArrayBuffer(file);
+}
+['purchaseUpload','salesUpload'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover')});
+  el.addEventListener('dragleave',()=>el.classList.remove('dragover'));
+  el.addEventListener('drop',e=>{
+    e.preventDefault();el.classList.remove('dragover');
+    const type=id==='purchaseUpload'?'purchase':'sales';
+    const inputId=type==='purchase'?'purchaseFile':'salesFile';
+    const dt=new DataTransfer();dt.items.add(e.dataTransfer.files[0]);
+    document.getElementById(inputId).files=dt.files;
+    handleFile(document.getElementById(inputId),type);
+  });
+});
+
+function checkReady(){document.getElementById('calcBtn').disabled=!(purchaseData&&salesData&&selectedMonths.length>0)}
+
+// ======================== STATUS ========================
+function showStatus(msg,type){const bar=document.getElementById('statusBar');bar.textContent=msg;bar.className='status-bar show '+type}
+
+// ======================== GET BILLING RATES FROM UI ========================
+function getBillingRates(){
+  const mode=getMode();
+  const isSame=(mode==='single')||(rateMode==='same');
+  const rates={};
+  if(isSame){
+    const base={};
+    SKUS.forEach(sku=>{base[sku]=parseFloat(document.getElementById(`bill_s_${sku}`).value)||0});
+    selectedMonths.forEach(m=>{rates[m]={...base}});
+  }else{
+    selectedMonths.forEach(m=>{
+      rates[m]={};
+      SKUS.forEach(sku=>{
+        const id=`bill_m_${sku}_${m.replace("'","_")}`;
+        const el=document.getElementById(id);
+        rates[m][sku]=el?parseFloat(el.value)||0:BILL_DEF[sku];
+      });
+    });
+  }
+  return rates;
+}
+
+// ======================== MAIN CALCULATION ========================
+function calculate(){
+  try{
+    showStatus('Parsing files...','info');
+    const conv={};
+    SKUS.forEach(sku=>{conv[sku]=parseFloat(document.getElementById(`conv_${sku}`).value)||0});
+    const billingRates=getBillingRates();
+
+    // PARSE PURCHASE
+    let pSheetName=null;
+    ['Purchase - Raw Materials','Purchase - Raw Material','Purchase Register','Sheet1'].forEach(n=>{if(!pSheetName&&purchaseData.Sheets[n])pSheetName=n});
+    if(!pSheetName)pSheetName=purchaseData.SheetNames[0];
+    const pSheet=purchaseData.Sheets[pSheetName];
+    const pRows=XLSX.utils.sheet_to_json(pSheet,{header:1,defval:null,raw:false});
+
+    let pStart=9;
+    for(let i=0;i<Math.min(20,pRows.length);i++){const row=pRows[i];if(row&&row.some(c=>c&&/quantity/i.test(String(c)))&&row.some(c=>c&&/rate/i.test(String(c)))){pStart=i+1;break}}
+
+    const purchases={};
+    let curDate=null,curFreight=0,curItems=[];
+    function flush(){
+      if(!curItems.length||!curDate){curItems=[];curFreight=0;return}
+      const month=getMonthStr(curDate);
+      if(!month){curItems=[];curFreight=0;return}
+      if(!purchases[month])purchases[month]={};
+      const tv=curItems.reduce((s,[,q,r])=>s+q*r,0);
+      curItems.forEach(([mat,qty,rate])=>{
+        const val=qty*rate,frt=(tv>0&&curFreight)?curFreight*(val/tv):0;
+        if(!purchases[month][mat])purchases[month][mat]={qty:0,purchase_amt:0,freight:0,gross:0};
+        purchases[month][mat].qty+=qty;purchases[month][mat].purchase_amt+=val;
+        purchases[month][mat].freight+=frt;purchases[month][mat].gross+=val+frt;
+      });
+      curItems=[];curFreight=0;
+    }
+    for(let i=pStart;i<pRows.length;i++){
+      const row=pRows[i];if(!row)continue;
+      const dt=parseDate(row[0]),c2=row[1],c8=parseNum(row[7]),c9=parseNum(row[8]),c10=parseNum(row[9]),c15=parseNum(row[14]);
+      if(c10!==null&&c9===null){flush();if(dt)curDate=dt;curFreight=c15||0;curItems=[]}
+      else if(c9!==null&&c10===null){const mat=c2?String(c2).trim():'';const qty=c8||0,rate=c9||0;if(mat&&qty>0)curItems.push([mat,qty,rate])}
+    }
+    flush();
+    for(const m in purchases)for(const mat in purchases[m]){const d=purchases[m][mat];d.rate=d.qty?d.gross/d.qty:0}
+
+    // PARSE SALES (for quantities only)
+    let sSheetName=null;
+    ['Sales Register','Sales','Sheet1'].forEach(n=>{if(!sSheetName&&salesData.Sheets[n])sSheetName=n});
+    if(!sSheetName)sSheetName=salesData.SheetNames[0];
+    const sRows=XLSX.utils.sheet_to_json(salesData.Sheets[sSheetName],{header:1,defval:null,raw:false});
+    let sStart=7;
+    for(let i=0;i<Math.min(20,sRows.length);i++){const row=sRows[i];if(row&&row.some(c=>c&&/quantity/i.test(String(c)))&&row.some(c=>c&&/rate/i.test(String(c)))){sStart=i+1;break}}
+
+    const sales={};let sCurDate=null;
+    for(let i=sStart;i<sRows.length;i++){
+      const row=sRows[i];if(!row)continue;
+      const dt=parseDate(row[0]),desc=row[1],qty=parseNum(row[5]),rate=parseNum(row[6]);
+      if(dt){sCurDate=dt;continue}
+      if(desc&&qty&&rate&&sCurDate){
+        const month=getMonthStr(sCurDate);if(!month)continue;
+        const sku=getSku(String(desc));if(!sku)continue;
+        if(!sales[month])sales[month]={};
+        if(!sales[month][sku])sales[month][sku]={cases:0,amount:0};
+        sales[month][sku].cases+=qty;sales[month][sku].amount+=qty*rate;
+      }
+    }
+
+    // COMPUTE
+    const sortedM=sortMonths([...selectedMonths]);
+    function getRate(month,matList){
+      let tq=0,ta=0;
+      matList.forEach(mat=>{if(purchases[month]&&purchases[month][mat]){tq+=purchases[month][mat].qty;ta+=purchases[month][mat].gross}});
+      if(tq===0)sortedM.forEach(m2=>{matList.forEach(mat=>{if(purchases[m2]&&purchases[m2][mat]){tq+=purchases[m2][mat].qty;ta+=purchases[m2][mat].gross}})});
+      if(tq===0)for(const m2 in purchases){matList.forEach(mat=>{if(purchases[m2]&&purchases[m2][mat]){tq+=purchases[m2][mat].qty;ta+=purchases[m2][mat].gross}})}
+      return tq?ta/tq:0;
+    }
+    function computeCost(month,sku){
+      const pack=PACKS[sku],mats=SKU_MATS[sku]||{},r={};
+      r.Preform=mats.Preform?getRate(month,mats.Preform)*pack:0;
+      if(mats.Label){const rt=getRate(month,mats.Label);r.Label=BOM_LABEL[sku]?rt*BOM_LABEL[sku]:(BOM_LABEL_JAR[sku]?rt*BOM_LABEL_JAR[sku]*pack:0)}else r.Label=0;
+      if(['200ml','250ml','500ml','1Ltr','2Ltr'].includes(sku))r.Cap=getRate(month,PET_CAPS)*pack;
+      else if(['5Ltr','10Ltr'].includes(sku))r.Cap=getRate(month,JAR_CAPS)*pack;
+      else if(mats.Cap)r.Cap=getRate(month,mats.Cap)*pack;else r.Cap=0;
+      if(['200ml','250ml'].includes(sku))r.Shrink=getRate(month,SHRINK_250_200)*(BOM_SHRINK[sku]||0);
+      else if(mats.Shrink)r.Shrink=getRate(month,mats.Shrink)*(BOM_SHRINK[sku]||0);else r.Shrink=0;
+      r.Sleeve=mats.Sleeve?getRate(month,mats.Sleeve)*(1/20):0;
+      r.Handle=mats.Handle?getRate(month,mats.Handle)*pack:0;
+      r.Jar=mats.Jar?getRate(month,mats.Jar)*pack:0;
+      r.Total=COMPS.reduce((s,c)=>s+(r[c]||0),0);return r;
+    }
+
+    const allRows=[],grand={cases:0,billing:0,rmpm:0,conv:0,rd:0},monthTotals={},skuTotals={};
+    SKUS.forEach(s=>skuTotals[s]={cases:0,billing:0,rmpm:0,conv:0,rd:0});
+
+    sortedM.forEach(month=>{
+      const mt={cases:0,billing:0,rmpm:0,conv:0,rd:0};
+      const br=billingRates[month]||{};
+      SKUS.forEach(sku=>{
+        const sd=(sales[month]&&sales[month][sku])?sales[month][sku]:{cases:0,amount:0};
+        const cases=Math.round(sd.cases);
+        const billRate=br[sku]||0;
+        const billAmt=billRate*cases;
+        const cost=computeCost(month,sku);
+        const cv=conv[sku],tc=cost.Total+cv;
+        const rd=billRate-tc,rdAmt=rd*cases;
+        allRows.push({month,sku,cases,billRate,billAmt,cost,conv:cv,tc,rd,rdAmt});
+        mt.cases+=cases;mt.billing+=billAmt;mt.rmpm+=cost.Total*cases;mt.conv+=cv*cases;mt.rd+=rdAmt;
+        skuTotals[sku].cases+=cases;skuTotals[sku].billing+=billAmt;
+        skuTotals[sku].rmpm+=cost.Total*cases;skuTotals[sku].conv+=cv*cases;skuTotals[sku].rd+=rdAmt;
+      });
+      monthTotals[month]=mt;
+      grand.cases+=mt.cases;grand.billing+=mt.billing;grand.rmpm+=mt.rmpm;grand.conv+=mt.conv;grand.rd+=mt.rd;
+    });
+
+    calcResults={allRows,grand,monthTotals,skuTotals,sortedMonths:sortedM,purchases,sales,conv,billingRates};
+    showStatus(`Done! ${sortedM.length} month(s), ${grand.cases.toLocaleString('en-IN')} cases processed.`,'success');
+    renderResults();
+  }catch(err){showStatus('Error: '+err.message,'error');console.error(err)}
+}
+
+// ======================== RENDER ========================
+function fmt(n,d=2){return n?n.toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d}):'0.00'}
+function fmtI(n){return n?n.toLocaleString('en-IN'):'0'}
+function rc(v){return v>=0?'pos':'neg'}
+
+function renderResults(){
+  const{grand,monthTotals,skuTotals,sortedMonths,allRows}=calcResults;
+  document.getElementById('results').style.display='block';
+
+  // VERDICT BOX
+  const vb=document.getElementById('verdictBox');
+  const isSurplus=grand.rd>=0;
+  vb.className='verdict-box '+(isSurplus?'surplus':'deficit');
+  document.getElementById('verdictTitle').textContent=isSurplus?'SURPLUS — Billing covers cost':'DEFICIT — Cost exceeds billing';
+  const absRd=Math.abs(grand.rd);
+  let rdStr;
+  if(absRd>=10000000)rdStr=`₹${fmt(absRd/10000000)} Crore`;
+  else if(absRd>=100000)rdStr=`₹${fmt(absRd/100000)} Lakhs`;
+  else rdStr=`₹${fmt(absRd)}`;
+  document.getElementById('verdictAmt').textContent=(isSurplus?'+':'-')+' '+rdStr;
+  document.getElementById('verdictDetail').textContent=isSurplus
+    ?`Bisleri billing is ₹${fmt(grand.rd/100000)} Lakhs MORE than total cost. No payment due from Aambika.`
+    :`Total cost exceeds Bisleri billing by ₹${fmt(absRd/100000)} Lakhs. Bisleri needs to pay the difference.`;
+
+  // SUMMARY BOXES
+  document.getElementById('summaryGrid').innerHTML=`
+    <div class="summary-box blue"><div class="label">Total Cases</div><div class="value">${fmtI(grand.cases)}</div></div>
+    <div class="summary-box blue"><div class="label">Billing Amount</div><div class="value">₹${fmt(grand.billing/100000)} L</div></div>
+    <div class="summary-box"><div class="label">RMPM Cost</div><div class="value">₹${fmt(grand.rmpm/100000)} L</div></div>
+    <div class="summary-box"><div class="label">Conversion Cost</div><div class="value">₹${fmt(grand.conv/100000)} L</div></div>
+    <div class="summary-box ${grand.rd>=0?'green':'red'}"><div class="label">Rate Difference</div><div class="value">${grand.rd>=0?'+':''}₹${fmt(grand.rd/100000)} L</div></div>`;
+
+  // TABS
+  const tabs=['Month Summary','SKU Summary','RD Working','Per Case Cost'];
+  const tabBar=document.getElementById('tabBar'),tabContents=document.getElementById('tabContents');
+  tabBar.innerHTML='';tabContents.innerHTML='';
+  tabs.forEach((t,i)=>{
+    const tab=document.createElement('div');tab.className='tab'+(i===0?' active':'');tab.textContent=t;
+    tab.onclick=()=>{document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(e=>e.classList.remove('active'));tab.classList.add('active');document.getElementById('tab'+i).classList.add('active')};
+    tabBar.appendChild(tab);
+    const c=document.createElement('div');c.className='tab-content'+(i===0?' active':'');c.id='tab'+i;tabContents.appendChild(c);
+  });
+
+  // Tab 0: Month Summary
+  let h='<table class="data-table"><tr><th>Month</th><th>Cases</th><th>Billing (₹)</th><th>RMPM (₹)</th><th>Conv (₹)</th><th>Total Cost (₹)</th><th>RD (₹)</th></tr>';
+  sortedMonths.forEach(m=>{const mt=monthTotals[m];h+=`<tr><td>${m}</td><td>${fmtI(mt.cases)}</td><td>${fmt(mt.billing)}</td><td>${fmt(mt.rmpm)}</td><td>${fmt(mt.conv)}</td><td>${fmt(mt.rmpm+mt.conv)}</td><td class="${rc(mt.rd)}">${fmt(mt.rd)}</td></tr>`});
+  h+=`<tr class="total-row"><td>TOTAL</td><td>${fmtI(grand.cases)}</td><td>${fmt(grand.billing)}</td><td>${fmt(grand.rmpm)}</td><td>${fmt(grand.conv)}</td><td>${fmt(grand.rmpm+grand.conv)}</td><td class="${rc(grand.rd)}">${fmt(grand.rd)}</td></tr></table>`;
+  document.getElementById('tab0').innerHTML=h;
+
+  // Tab 1: SKU Summary
+  h='<table class="data-table"><tr><th>SKU</th><th>Pack</th><th>Cases</th><th>Billing ₹/cs</th><th>RMPM ₹/cs</th><th>Conv ₹/cs</th><th>Cost ₹/cs</th><th>RD ₹/cs</th><th>Total RD (₹)</th></tr>';
+  SKUS.forEach(sku=>{const st=skuTotals[sku],tc=st.cases;h+=`<tr><td>${sku}</td><td style="text-align:center">${PACKS[sku]}</td><td>${fmtI(tc)}</td><td>${fmt(tc?st.billing/tc:0)}</td><td>${fmt(tc?st.rmpm/tc:0)}</td><td>${fmt(tc?st.conv/tc:0)}</td><td>${fmt(tc?(st.rmpm+st.conv)/tc:0)}</td><td class="${rc(st.rd)}">${fmt(tc?st.rd/tc:0)}</td><td class="${rc(st.rd)}">${fmt(st.rd)}</td></tr>`});
+  h+='</table>';document.getElementById('tab1').innerHTML=h;
+
+  // Tab 2: RD Working
+  h='<table class="data-table"><tr><th>Month</th><th>SKU</th><th>Cases</th><th>Billing ₹/cs</th><th>RMPM ₹/cs</th><th>Conv ₹/cs</th><th>Total ₹/cs</th><th>RD ₹/cs</th><th>RD Amt (₹)</th></tr>';
+  sortedMonths.forEach(month=>{
+    h+=`<tr class="month-header"><td colspan="9">${month}</td></tr>`;
+    allRows.filter(r=>r.month===month&&r.cases>0).forEach(d=>{h+=`<tr><td>${month}</td><td>${d.sku}</td><td>${fmtI(d.cases)}</td><td>${fmt(d.billRate)}</td><td>${fmt(d.cost.Total)}</td><td>${fmt(d.conv)}</td><td>${fmt(d.tc)}</td><td class="${rc(d.rd)}">${fmt(d.rd)}</td><td class="${rc(d.rdAmt)}">${fmt(d.rdAmt)}</td></tr>`});
+    const mt=monthTotals[month];
+    h+=`<tr class="total-row"><td colspan="2">${month} Total</td><td>${fmtI(mt.cases)}</td><td></td><td></td><td></td><td></td><td></td><td class="${rc(mt.rd)}">${fmt(mt.rd)}</td></tr>`;
+  });
+  h+=`<tr class="total-row" style="background:#d0e3f7"><td colspan="2">GRAND TOTAL</td><td>${fmtI(grand.cases)}</td><td></td><td></td><td></td><td></td><td></td><td class="${rc(grand.rd)}">${fmt(grand.rd)}</td></tr></table>`;
+  document.getElementById('tab2').innerHTML=h;
+
+  // Tab 3: Per Case Cost
+  h='';
+  sortedMonths.forEach(month=>{
+    h+=`<div class="section-label">${month}</div>`;
+    h+='<table class="data-table"><tr><th>SKU</th><th>Cases</th><th>Preform</th><th>Label</th><th>Cap</th><th>Shrink</th><th>Sleeve</th><th>Handle</th><th>Jar</th><th>RMPM Total</th><th>Conv</th><th>Total Cost</th><th>Billing</th><th>RD</th></tr>';
+    allRows.filter(r=>r.month===month).forEach(d=>{
+      const hl=(d.cases>0&&d.rd<0)?' style="background:#fef5f5"':'';
+      h+=`<tr${hl}><td>${d.sku}</td><td>${fmtI(d.cases)}</td><td>${fmt(d.cost.Preform)}</td><td>${fmt(d.cost.Label)}</td><td>${fmt(d.cost.Cap)}</td><td>${fmt(d.cost.Shrink)}</td><td>${fmt(d.cost.Sleeve)}</td><td>${fmt(d.cost.Handle)}</td><td>${fmt(d.cost.Jar)}</td><td><b>${fmt(d.cost.Total)}</b></td><td>${fmt(d.conv)}</td><td><b>${fmt(d.tc)}</b></td><td>${fmt(d.billRate)}</td><td class="${rc(d.rd)}"><b>${fmt(d.rd)}</b></td></tr>`});
+    h+='</table>';
+  });
+  document.getElementById('tab3').innerHTML=h;
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+// ======================== EXCEL DOWNLOAD ========================
+function downloadExcel(){
+  if(!calcResults)return;
+  const{allRows,grand,monthTotals,skuTotals,sortedMonths,purchases,conv,billingRates}=calcResults;
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Summary
+  const s1=[['RATE DIFFERENCE SUMMARY'],['M/s Aambika Food & Beverages LLP | Co-Packer of Bisleri International Pvt. Ltd.'],[],
+    ['','Amount (Rs)','In Lakhs','In Crores'],
+    ['A. Total Billing to Bisleri (Excl. GST)',grand.billing,grand.billing/100000,grand.billing/10000000],
+    ['B. Total RMPM Purchase Cost',grand.rmpm,grand.rmpm/100000,grand.rmpm/10000000],
+    ['C. Conversion Cost',grand.conv,grand.conv/100000,grand.conv/10000000],
+    ['D. Total Cost (B+C)',grand.rmpm+grand.conv,(grand.rmpm+grand.conv)/100000,(grand.rmpm+grand.conv)/10000000],
+    ['E. RATE DIFFERENCE (A-D)',grand.rd,grand.rd/100000,grand.rd/10000000],
+    [],['VERDICT: '+(grand.rd>=0?'SURPLUS - Billing covers cost, no payment due from Aambika':'DEFICIT - Cost exceeds billing, Bisleri needs to pay difference')],
+    [],[],['MONTH-WISE RD'],['Month','Cases','Billing (Rs)','RMPM (Rs)','Conv (Rs)','Total Cost (Rs)','RD (Rs)']];
+  sortedMonths.forEach(m=>{const mt=monthTotals[m];s1.push([m,mt.cases,mt.billing,mt.rmpm,mt.conv,mt.rmpm+mt.conv,mt.rd])});
+  s1.push(['TOTAL',grand.cases,grand.billing,grand.rmpm,grand.conv,grand.rmpm+grand.conv,grand.rd]);
+  s1.push([],[],['SKU-WISE RD'],['SKU','Pack','Cases','Billing Rs/cs','RMPM Rs/cs','Conv Rs/cs','Cost Rs/cs','RD Rs/cs','Total RD (Rs)']);
+  SKUS.forEach(sku=>{const st=skuTotals[sku],tc=st.cases;s1.push([sku,PACKS[sku],tc,tc?st.billing/tc:0,tc?st.rmpm/tc:0,tc?st.conv/tc:0,tc?(st.rmpm+st.conv)/tc:0,tc?st.rd/tc:0,st.rd])});
+  const ws1=XLSX.utils.aoa_to_sheet(s1);ws1['!cols']=[{wch:44},{wch:15},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:16}];XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+  // Sheet 2: RD Working
+  const s2=[['RATE DIFFERENCE WORKING'],['RD = Billing Rate (Excl GST) - RMPM Cost per Case - Conversion Rate'],[],
+    ['Month','SKU','Pack','Cases','Billing Rs/cs','RMPM Rs/cs','Conv Rs/cs','Total Cost Rs/cs','RD Rs/cs','RD Amount (Rs)','Billing Amt (Rs)','RMPM Amt (Rs)']];
+  sortedMonths.forEach(month=>{
+    s2.push([month]);
+    allRows.filter(r=>r.month===month&&r.cases>0).forEach(d=>{s2.push([d.month,d.sku,PACKS[d.sku],d.cases,d.billRate,d.cost.Total,d.conv,d.tc,d.rd,d.rdAmt,d.billAmt,d.cost.Total*d.cases])});
+    const mt=monthTotals[month];s2.push([month+' Total','','',mt.cases,'','','','','',mt.rd,mt.billing,mt.rmpm]);
+  });
+  s2.push(['GRAND TOTAL','','',grand.cases,'','','','','',grand.rd,grand.billing,grand.rmpm]);
+  const ws2=XLSX.utils.aoa_to_sheet(s2);ws2['!cols']=[{wch:14},{wch:8},{wch:6},{wch:10},{wch:12},{wch:12},{wch:10},{wch:12},{wch:10},{wch:14},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws2,'RD Working');
+
+  // Sheet 3: Per Case Cost
+  const s3=[['PER CASE RMPM COST'],[],[]];
+  sortedMonths.forEach(month=>{
+    s3.push([month]);s3.push(['SKU','Pack','Cases','Preform','Label','Cap','Shrink','Sleeve','Handle','Jar','Total RMPM','Conv Rate','Total Cost','Billing Rate','RD']);
+    allRows.filter(r=>r.month===month).forEach(d=>{s3.push([d.sku,PACKS[d.sku],d.cases,d.cost.Preform,d.cost.Label,d.cost.Cap,d.cost.Shrink,d.cost.Sleeve,d.cost.Handle,d.cost.Jar,d.cost.Total,d.conv,d.tc,d.billRate,d.rd])});s3.push([]);
+  });
+  const ws3=XLSX.utils.aoa_to_sheet(s3);ws3['!cols']=[{wch:10},{wch:6},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10}];XLSX.utils.book_append_sheet(wb,ws3,'Per Case Cost');
+
+  // Sheet 4: Purchase Summary
+  const s4=[['PURCHASE REGISTER SUMMARY'],[],[]];
+  sortedMonths.forEach(month=>{
+    const pr=purchases[month];if(!pr)return;
+    const tot=Object.values(pr).reduce((s,d)=>s+d.gross,0);
+    s4.push([`${month} | Total: Rs ${tot.toLocaleString('en-IN',{maximumFractionDigits:0})}`]);
+    s4.push(['Material','Qty','Purchase (Rs)','Freight (Rs)','Gross (Rs)','Rate Rs/unit','SKU','Type']);
+    Object.keys(pr).sort().forEach(mat=>{const d=pr[mat],mapping=MAT_SKU_MAP[mat]||[['?','?']];s4.push([mat,d.qty,d.purchase_amt,d.freight,d.gross,d.rate,mapping.map(m=>m[0]).join(', '),mapping[0][1]])});s4.push([]);
+  });
+  const ws4=XLSX.utils.aoa_to_sheet(s4);ws4['!cols']=[{wch:45},{wch:12},{wch:16},{wch:12},{wch:16},{wch:14},{wch:20},{wch:10}];XLSX.utils.book_append_sheet(wb,ws4,'Purchase Summary');
+
+  // Sheet 5: Billing Rates Reference
+  const s5=[['BILLING RATES (Excl GST) & CONVERSION RATES'],[],['BILLING RATES Rs/Case'],['SKU','Pack']];
+  sortedMonths.forEach(m=>s5[3].push(m));
+  SKUS.forEach(sku=>{const row=[sku,PACKS[sku]];sortedMonths.forEach(m=>row.push(billingRates[m]?billingRates[m][sku]:0));s5.push(row)});
+  s5.push([],['CONVERSION RATES Rs/Case'],['SKU','Rate']);
+  SKUS.forEach(sku=>s5.push([sku,conv[sku]]));
+  s5.push([],['BOM - BOPP Labels'],['SKU','Labels/KG','Btl/Case','KG/Case']);
+  [['1Ltr',3030,12],['2Ltr',2050,9],['500ml',3800,24],['250ml',7800,48],['200ml',8600,48]].forEach(([s,l,b])=>s5.push([s,l,b,b/l]));
+  s5.push([],['BOM - Shrink Film'],['SKU','Cases/KG','KG/Case']);
+  [['1Ltr',27],['2Ltr',15],['500ml',27],['250ml',20],['200ml',24]].forEach(([s,c])=>s5.push([s,c,1/c]));
+  const ws5=XLSX.utils.aoa_to_sheet(s5);ws5['!cols']=[{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws5,'Rates & BOM');
+
+  const fn=sortedMonths.length===1?`RD Working ${sortedMonths[0]}.xlsx`:`RD Working ${sortedMonths[0]} to ${sortedMonths[sortedMonths.length-1]}.xlsx`;
+  XLSX.writeFile(wb,fn);
+}
+
+// ======================== INIT ========================
+initBillingSameTable();
+initConvTable();
+buildMonthChips();
+setMode('single');
+</script>
+</body>
+</html>
