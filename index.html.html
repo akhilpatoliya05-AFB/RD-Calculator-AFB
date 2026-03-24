@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RD Calculator — Aambika Food & Beverages LLP</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh;color:#1a2332}
+.container{max-width:1300px;margin:0 auto;padding:14px}
+.header{text-align:center;padding:20px 0 12px}
+.header h1{font-size:22px;color:#1565c0;margin-bottom:2px}
+.header h2{font-size:11px;color:#5f7a95;font-weight:400}
+.card{background:#fff;border:1px solid #dce3ea;border-radius:10px;padding:18px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.04)}
+.card h3{color:#1565c0;font-size:13px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.card h3 .num{background:#1565c0;color:#fff;min-width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.upload-row{display:flex;gap:12px}
+.upload-row .col{flex:1}
+.upload-area{border:2px dashed #b0c4de;border-radius:8px;padding:18px 10px;text-align:center;cursor:pointer;transition:.2s;background:#fafcff}
+.upload-area:hover,.upload-area.dragover{border-color:#1565c0;background:#eef4fb}
+.upload-area.done{border-color:#2e7d32;background:#f1f8f2}
+.upload-area input{display:none}
+.upload-area .icon{font-size:24px;margin-bottom:2px}
+.upload-area .main-text{font-size:12px;color:#37474f;font-weight:600}
+.upload-area .sub-text{font-size:10px;color:#78909c;margin-top:1px}
+.upload-area .file-name{color:#2e7d32;font-weight:700;margin-top:4px;font-size:11px}
+.mode-btns{display:flex;gap:6px;margin-bottom:10px}
+.mode-btn{padding:6px 14px;border:2px solid #dce3ea;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#546e7a;transition:.2s;background:#fff}
+.mode-btn:hover{border-color:#1565c0;color:#1565c0}
+.mode-btn.active{border-color:#1565c0;background:#eef4fb;color:#1565c0}
+.month-chips{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.month-chip{padding:5px 10px;border:1px solid #dce3ea;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;color:#546e7a;transition:.2s;user-select:none}
+.month-chip:hover{border-color:#1565c0}
+.month-chip.selected{background:#1565c0;color:#fff;border-color:#1565c0}
+.year-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.year-row select{padding:4px 8px;border:1px solid #c5d3e0;border-radius:4px;font-size:11px;background:#f5f8fc}
+.year-row label{font-size:11px;font-weight:600;color:#546e7a}
+.rate-toggle{display:flex;gap:5px;margin:6px 0 8px}
+.rate-toggle .rt-btn{padding:5px 12px;border:1.5px solid #dce3ea;border-radius:5px;cursor:pointer;font-size:11px;font-weight:600;color:#546e7a;background:#fff;transition:.2s}
+.rate-toggle .rt-btn:hover{border-color:#1565c0}
+.rate-toggle .rt-btn.active{border-color:#1565c0;background:#eef4fb;color:#1565c0}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+.tbl th{background:#e3edf7;color:#1565c0;padding:6px 7px;text-align:center;font-weight:700;border:1px solid #d0dbe6;font-size:10px;white-space:nowrap}
+.tbl td{padding:4px 5px;text-align:center;border:1px solid #e0e8f0;background:#fff}
+.tbl td:first-child{text-align:left;font-weight:600;color:#37474f;font-size:10px}
+.tbl input{width:68px;background:#f5f8fc;border:1px solid #c5d3e0;border-radius:3px;color:#1a2332;padding:3px 5px;font-size:10px;text-align:center}
+.tbl input:focus{outline:none;border-color:#1565c0;background:#fff}
+.section-title{font-size:12px;font-weight:700;color:#1565c0;margin:10px 0 5px}
+.collapsible{cursor:pointer;user-select:none}
+.collapsible::before{content:'▸ ';font-size:11px}
+.collapsible.open::before{content:'▾ '}
+.collapse-body{display:none;margin-top:6px}
+.collapse-body.open{display:block}
+.note{font-size:9px;color:#90a4ae;margin-top:3px}
+.btn-calc{width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:8px;cursor:pointer;transition:.2s;letter-spacing:.5px}
+.btn-calc:not(:disabled){background:linear-gradient(135deg,#1976d2,#1565c0);color:#fff;box-shadow:0 2px 8px rgba(21,101,192,.2)}
+.btn-calc:not(:disabled):hover{box-shadow:0 3px 12px rgba(21,101,192,.3)}
+.btn-calc:disabled{background:#cfd8dc;color:#90a4ae;cursor:not-allowed}
+.btn-dl{display:inline-flex;align-items:center;gap:5px;padding:9px 18px;font-size:13px;font-weight:700;border:none;border-radius:7px;cursor:pointer;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;box-shadow:0 2px 8px rgba(46,125,50,.2);transition:.2s}
+.btn-dl:hover{box-shadow:0 3px 12px rgba(46,125,50,.3)}
+#results{display:none}
+.verdict{border-radius:10px;padding:16px;margin-bottom:12px;text-align:center}
+.verdict.surplus{background:linear-gradient(135deg,#e8f5e9,#f1f8f2);border:2px solid #66bb6a}
+.verdict.deficit{background:linear-gradient(135deg,#ffebee,#fef5f5);border:2px solid #ef5350}
+.verdict .vt{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.verdict.surplus .vt{color:#2e7d32}.verdict.deficit .vt{color:#c62828}
+.verdict .va{font-size:26px;font-weight:800;margin:3px 0}
+.verdict.surplus .va{color:#2e7d32}.verdict.deficit .va{color:#c62828}
+.verdict .vd{font-size:11px;color:#546e7a;margin-top:2px}
+.verdict .vw{font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.1)}
+.sgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:12px}
+.sbox{background:#f5f8fc;border:1px solid #dce3ea;border-radius:7px;padding:10px;text-align:center}
+.sbox .sl{font-size:9px;color:#78909c;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.sbox .sv{font-size:15px;font-weight:800;margin-top:2px;color:#1a2332}
+.sbox.green{border-color:#a5d6a7;background:#f1f8f2}.sbox.green .sv{color:#2e7d32}
+.sbox.red{border-color:#ef9a9a;background:#fef5f5}.sbox.red .sv{color:#c62828}
+.sbox.blue{border-color:#90caf9;background:#eef4fb}.sbox.blue .sv{color:#1565c0}
+.sbox.orange{border-color:#ffcc80;background:#fff8e1}.sbox.orange .sv{color:#e65100}
+.tabs{display:flex;gap:2px;border-bottom:2px solid #dce3ea}
+.tab{padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:#78909c;border-radius:5px 5px 0 0;transition:.2s}
+.tab:hover{color:#1565c0;background:#eef4fb}
+.tab.active{color:#1565c0;background:#fff;border:1px solid #dce3ea;border-bottom:2px solid #fff;margin-bottom:-2px}
+.tc{display:none;padding:10px 0 0}.tc.active{display:block}
+.dt{width:100%;border-collapse:collapse;font-size:10px}
+.dt th{background:#e3edf7;color:#1565c0;padding:6px;text-align:center;font-weight:700;border:1px solid #d0dbe6;white-space:nowrap;font-size:9px}
+.dt td{padding:4px 5px;border:1px solid #e0e8f0;text-align:right;background:#fff}
+.dt td:first-child,.dt td:nth-child(2){text-align:left}
+.dt tr.tr{background:#e8f0fe;font-weight:700}.dt tr.tr td{border-bottom:2px solid #1565c0}
+.dt tr.mh td{font-weight:700;color:#fff;text-align:left;background:#1976d2}
+.dt tr:hover:not(.tr):not(.mh) td{background:#f5f8fc}
+.pos{color:#2e7d32;font-weight:700}.neg{color:#c62828;font-weight:700}
+.warn{color:#e65100;font-weight:700}
+.status{border-radius:6px;padding:7px 12px;margin:8px 0;font-size:11px;display:none}
+.status.show{display:block}
+.status.error{background:#fef5f5;border:1px solid #ef9a9a;color:#c62828}
+.status.success{background:#f1f8f2;border:1px solid #a5d6a7;color:#2e7d32}
+.status.info{background:#eef4fb;border:1px solid #90caf9;color:#1565c0}
+.hidden{display:none!important}
+.tbl-wrap{max-height:350px;overflow:auto;border:1px solid #e0e8f0;border-radius:6px}
+@media(max-width:768px){.upload-row{flex-direction:column}.sgrid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>Rate Difference & Wastage Calculator</h1>
+<h2>M/s Aambika Food & Beverages LLP — Co-Packer of Bisleri International Pvt. Ltd.</h2>
+</div>
+
+<!-- STEP 1: PERIOD -->
+<div class="card">
+<h3><span class="num">1</span> Select Period</h3>
+<div class="mode-btns" id="modeB">
+<div class="mode-btn active" onclick="setMode('single')">Single Month</div>
+<div class="mode-btn" onclick="setMode('multi')">Multiple Months</div>
+</div>
+<div class="year-row"><label>Year:</label><select id="yrSel" onchange="buildChips()"><option value="25">2025</option><option value="26" selected>2026</option><option value="27">2027</option></select></div>
+<div class="month-chips" id="mChips"></div>
+<p class="note" id="mNote">Click to select month</p>
+</div>
+
+<!-- STEP 2: UPLOAD -->
+<div class="card">
+<h3><span class="num">2</span> Upload Tally Exports</h3>
+<div class="upload-row">
+<div class="col"><div class="upload-area" id="pUp" onclick="document.getElementById('pFile').click()"><input type="file" id="pFile" accept=".xlsx,.xls" onchange="loadF(this,'p')"><div class="icon">📦</div><div class="main-text">Purchase Register (RMPM)</div><div class="sub-text">Tally Export — .xlsx</div><div class="file-name" id="pFN"></div></div></div>
+<div class="col"><div class="upload-area" id="sUp" onclick="document.getElementById('sFile').click()"><input type="file" id="sFile" accept=".xlsx,.xls" onchange="loadF(this,'s')"><div class="icon">💰</div><div class="main-text">Sales Register</div><div class="sub-text">Tally Export — .xlsx</div><div class="file-name" id="sFN"></div></div></div>
+</div>
+</div>
+
+<!-- STEP 3: BILLING RATE -->
+<div class="card">
+<h3><span class="num">3</span> Billing Rate ₹/Case (Excl. GST)</h3>
+<div id="billToggle" class="hidden"><div class="rate-toggle"><div class="rt-btn active" id="bSame" onclick="setBillMode('same')">Same for All Months</div><div class="rt-btn" id="bDiff" onclick="setBillMode('diff')">Different Each Month</div></div></div>
+<div id="billSameDiv"><table class="tbl"><thead><tr><th>SKU</th><th>Pack</th><th>Billing Rate ₹/Case</th></tr></thead><tbody id="billSameB"></tbody></table></div>
+<div id="billDiffDiv" class="hidden" style="overflow-x:auto"><table class="tbl" id="billDiffT"></table></div>
+</div>
+
+<!-- STEP 4: CONVERSION RATE -->
+<div class="card">
+<h3><span class="num">4</span> Conversion Rate ₹/Case</h3>
+<div id="convToggle" class="hidden"><div class="rate-toggle"><div class="rt-btn active" id="cSame" onclick="setConvMode('same')">Same for All Months</div><div class="rt-btn" id="cDiff" onclick="setConvMode('diff')">Different Each Month</div></div></div>
+<div id="convSameDiv"><table class="tbl"><thead><tr><th>SKU</th><th>Pack</th><th>Conversion Rate ₹/Case</th></tr></thead><tbody id="convSameB"></tbody></table></div>
+<div id="convDiffDiv" class="hidden" style="overflow-x:auto"><table class="tbl" id="convDiffT"></table></div>
+</div>
+
+<!-- STEP 5: STOCK DATA -->
+<div class="card">
+<h3><span class="num">5</span> Stock Data (for Wastage Calculation)</h3>
+<p class="note" style="margin-bottom:8px">Enter opening & closing stock. For multiple months, closing of Month 1 = opening of Month 2 (auto-linked). Leave zeros if you don't want wastage calculation.</p>
+
+<div class="section-title collapsible open" onclick="toggleCollapse(this)">FG Stock (Cases per SKU)</div>
+<div class="collapse-body open" id="fgStockDiv" style="overflow-x:auto"><table class="tbl" id="fgStockT"></table></div>
+
+<div class="section-title collapsible" onclick="toggleCollapse(this)" style="margin-top:10px">RMPM Stock (Material-wise Qty)</div>
+<div class="collapse-body" id="rmStockDiv"><div class="tbl-wrap"><table class="tbl" id="rmStockT"></table></div></div>
+</div>
+
+<!-- STEP 6: CALCULATE -->
+<div class="card" style="text-align:center">
+<h3><span class="num">6</span> Calculate</h3>
+<button class="btn-calc" id="calcBtn" disabled onclick="calculate()">CALCULATE RD & WASTAGE</button>
+<div class="status" id="statusBar"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+<div class="verdict" id="vBox">
+<div class="vt" id="vTitle"></div>
+<div class="va" id="vAmt"></div>
+<div class="vd" id="vDetail"></div>
+<div class="vw" id="vWaste"></div>
+</div>
+<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+<h3 style="margin:0">Results</h3>
+<button class="btn-dl" onclick="dlExcel()">⬇ Download Excel</button>
+</div>
+<div style="height:8px"></div>
+<div class="sgrid" id="sGrid"></div>
+</div>
+<div class="card">
+<div class="tabs" id="tabBar"></div>
+<div id="tabC"></div>
+</div>
+</div>
+</div>
+
+<script>
+// ========== CONSTANTS ==========
+const SKUS=['20Ltr','10Ltr','5Ltr','2Ltr','1Ltr','500ml','250ml','200ml'];
+const PACKS={'20Ltr':1,'10Ltr':1,'5Ltr':1,'2Ltr':9,'1Ltr':12,'500ml':24,'250ml':48,'200ml':48};
+const CONV_D={'20Ltr':18,'10Ltr':12,'5Ltr':7,'2Ltr':23,'1Ltr':20,'500ml':26,'250ml':45.75,'200ml':44};
+const BILL_D={'20Ltr':110,'10Ltr':67,'5Ltr':38,'2Ltr':252,'1Ltr':186,'500ml':204,'250ml':228,'200ml':220};
+const BOM_LABEL={'2Ltr':9/2050,'1Ltr':12/3030,'500ml':24/3800,'250ml':48/7800,'200ml':48/8600};
+const BOM_SHRINK={'1Ltr':1/27,'2Ltr':1/15,'500ml':1/27,'200ml':1/24,'250ml':1/20};
+const BOM_LABEL_JAR={'5Ltr':1/1000,'10Ltr':1/850,'20Ltr':1/750};
+const COMPS=['Preform','Label','Cap','Shrink','Sleeve','Handle','Jar'];
+
+// All materials with their units
+const MATERIALS=[
+  {n:'200 Ml Pet Preforms - 7.25 Gm',u:'nos'},{n:'250 Ml Pet Preforms - 8 gm',u:'nos'},
+  {n:'500 Ml Pet Preforms - 11 gm',u:'nos'},{n:'500ml Pet Preform -12.6gms',u:'nos'},
+  {n:'1 Ltr Preform 18 Gm',u:'nos'},{n:'1Ltr Pet Preform - 20gms',u:'nos'},
+  {n:'2 Ltr Pet Preform - 30 Gms',u:'nos'},{n:'2Ltr Pet Preform - 32GMS',u:'nos'},
+  {n:'200ml BOPP Labels',u:'kg'},{n:'250ml BOPP Labels',u:'kg'},
+  {n:'500ml BOPP Labels',u:'kg'},{n:'1Ltr BOPP Labels',u:'kg'},{n:'2Ltr BOPP Labels',u:'kg'},
+  {n:'5 Ltr Labels',u:'kg'},{n:'10Ltr Labels',u:'kg'},{n:'20Ltr Labels',u:'kg'},
+  {n:'26/22 Bisleri Caps',u:'nos'},{n:'27mm Bisleri Caps',u:'nos'},
+  {n:'10Ltr / 5 Ltr Caps  = 4.5 Gms(48MM)',u:'nos'},{n:'20Ltr Bisleri Caps',u:'nos'},
+  {n:'1Ltr Bisleri LDPE Shrink Film',u:'kg'},{n:'500Ml Bisleri LDPE Shrink Film - Plain',u:'kg'},
+  {n:'2Ltr Bisleri LDPE Shrink Film - Plain',u:'kg'},{n:'250ml / 200ml Bisleri LDPE Shrink Film - Plain',u:'kg'},
+  {n:'5 Ltr Bisleri Blown Jars',u:'nos'},{n:'10 Ltr Bisleri Blown Jars',u:'nos'},
+  {n:'5 Ltr Handle = 6.5 Gms',u:'nos'},{n:'10 Ltr Handle - 12.5 Gms',u:'nos'},
+  {n:'2 Ltr. Handles',u:'nos'},{n:'20Ltr Bisleri Sleeves',u:'nos'},
+];
+
+const MAT_SKU_MAP={
+  '200 Ml Pet Preforms - 7.25 Gm':[['200ml','Preform']],'250 Ml Pet Preforms - 8 gm':[['250ml','Preform']],
+  '500 Ml Pet Preforms - 11 gm':[['500ml','Preform']],'500ml Pet Preform -12.6gms':[['500ml','Preform']],
+  '1 Ltr Preform 18 Gm':[['1Ltr','Preform']],'1Ltr Pet Preform - 20gms':[['1Ltr','Preform']],
+  '2 Ltr Pet Preform - 30 Gms':[['2Ltr','Preform']],'2Ltr Pet Preform - 32GMS':[['2Ltr','Preform']],
+  '200ml BOPP Labels':[['200ml','Label']],'250ml BOPP Labels':[['250ml','Label']],
+  '500ml BOPP Labels':[['500ml','Label']],'1Ltr BOPP Labels':[['1Ltr','Label']],
+  '2Ltr BOPP Labels':[['2Ltr','Label']],'5 Ltr Labels':[['5Ltr','Label']],
+  '10Ltr Labels':[['10Ltr','Label']],'20Ltr Labels':[['20Ltr','Label']],
+  '26/22 Bisleri Caps':[['200ml','Cap'],['250ml','Cap'],['500ml','Cap'],['1Ltr','Cap'],['2Ltr','Cap']],
+  '27mm Bisleri Caps':[['200ml','Cap'],['250ml','Cap'],['500ml','Cap'],['1Ltr','Cap'],['2Ltr','Cap']],
+  '10Ltr / 5 Ltr Caps  = 4.5 Gms(48MM)':[['5Ltr','Cap'],['10Ltr','Cap']],
+  '10Ltr / 5 Ltr Caps = 4.5 Gms(48MM)':[['5Ltr','Cap'],['10Ltr','Cap']],
+  '20Ltr Bisleri Caps':[['20Ltr','Cap']],
+  '1Ltr Bisleri LDPE Shrink Film':[['1Ltr','Shrink']],
+  '500Ml Bisleri LDPE Shrink Film - Plain':[['500ml','Shrink']],
+  '2Ltr Bisleri LDPE Shrink Film - Plain':[['2Ltr','Shrink']],
+  '250ml / 200ml Bisleri LDPE Shrink Film - Plain':[['250ml','Shrink'],['200ml','Shrink']],
+  '5 Ltr Bisleri Blown Jars':[['5Ltr','Jar']],'10 Ltr Bisleri Blown Jars':[['10Ltr','Jar']],
+  '5 Ltr Handle = 6.5 Gms':[['5Ltr','Handle']],'10 Ltr Handle - 12.5 Gms':[['10Ltr','Handle']],
+  '2 Ltr. Handles':[['2Ltr','Handle']],'20Ltr Bisleri Sleeves':[['20Ltr','Sleeve']],
+};
+const PET_CAPS=['26/22 Bisleri Caps','27mm Bisleri Caps'];
+const JAR_CAPS=['10Ltr / 5 Ltr Caps  = 4.5 Gms(48MM)','10Ltr / 5 Ltr Caps = 4.5 Gms(48MM)'];
+const SHRINK_250_200=['250ml / 200ml Bisleri LDPE Shrink Film - Plain'];
+const SKU_MATS={
+  '200ml':{Preform:['200 Ml Pet Preforms - 7.25 Gm'],Label:['200ml BOPP Labels']},
+  '250ml':{Preform:['250 Ml Pet Preforms - 8 gm'],Label:['250ml BOPP Labels']},
+  '500ml':{Preform:['500 Ml Pet Preforms - 11 gm','500ml Pet Preform -12.6gms'],Label:['500ml BOPP Labels'],Shrink:['500Ml Bisleri LDPE Shrink Film - Plain']},
+  '1Ltr':{Preform:['1 Ltr Preform 18 Gm','1Ltr Pet Preform - 20gms'],Label:['1Ltr BOPP Labels'],Shrink:['1Ltr Bisleri LDPE Shrink Film']},
+  '2Ltr':{Preform:['2 Ltr Pet Preform - 30 Gms','2Ltr Pet Preform - 32GMS'],Label:['2Ltr BOPP Labels'],Shrink:['2Ltr Bisleri LDPE Shrink Film - Plain'],Handle:['2 Ltr. Handles']},
+  '5Ltr':{Label:['5 Ltr Labels'],Jar:['5 Ltr Bisleri Blown Jars'],Handle:['5 Ltr Handle = 6.5 Gms']},
+  '10Ltr':{Label:['10Ltr Labels'],Jar:['10 Ltr Bisleri Blown Jars'],Handle:['10 Ltr Handle - 12.5 Gms']},
+  '20Ltr':{Label:['20Ltr Labels'],Cap:['20Ltr Bisleri Caps'],Sleeve:['20Ltr Bisleri Sleeves']},
+};
+
+// BOM per case: how much of a material is needed per case of a given SKU
+function bomPerCase(mat,sku){
+  const maps=MAT_SKU_MAP[mat];if(!maps)return 0;
+  const m=maps.find(x=>x[0]===sku);if(!m)return 0;
+  const t=m[1];
+  if(t==='Preform')return PACKS[sku];
+  if(t==='Label'){if(BOM_LABEL[sku])return BOM_LABEL[sku];if(BOM_LABEL_JAR[sku])return BOM_LABEL_JAR[sku]*PACKS[sku];return 0}
+  if(t==='Cap')return PACKS[sku];
+  if(t==='Shrink')return BOM_SHRINK[sku]||0;
+  if(t==='Sleeve')return 1/20;
+  if(t==='Handle')return PACKS[sku];
+  if(t==='Jar')return PACKS[sku];
+  return 0;
+}
+
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const mnM={0:'Jan',1:'Feb',2:'Mar',3:'Apr',4:'May',5:'Jun',6:'Jul',7:'Aug',8:'Sep',9:'Oct',10:'Nov',11:'Dec'};
+function gMS(dt){if(!dt||!(dt instanceof Date)||isNaN(dt))return null;return`${mnM[dt.getMonth()]}'${String(dt.getFullYear()).slice(2)}`}
+function pD(v){if(!v)return null;if(v instanceof Date&&!isNaN(v))return v;const s=String(v).trim();let d=new Date(s);if(!isNaN(d))return d;const m=s.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);if(m){let y=+m[3];if(y<100)y+=2000;d=new Date(y,m[2]-1,+m[1]);if(!isNaN(d))return d}return null}
+function pN(v){if(v==null||v==='')return null;const n=parseFloat(String(v).replace(/,/g,''));return isNaN(n)?null:n}
+function gSku(d){const s=String(d).trim();if(/^0[1-8]\s*-/.test(s)){const c=s.slice(0,2);return{'01':'20Ltr','02':'10Ltr','03':'5Ltr','04':'2Ltr','05':'1Ltr','06':'500ml','07':'250ml','08':'200ml'}[c]||null}return null}
+function sortM(a){return a.sort((x,y)=>{const ya=parseInt('20'+x.slice(4)),yb=parseInt('20'+y.slice(4));if(ya!==yb)return ya-yb;return MN.indexOf(x.slice(0,3))-MN.indexOf(y.slice(0,3))})}
+
+// ========== STATE ==========
+let pData=null,sData=null,selM=[],billMode='same',convMode='same',curMode='single',CR=null;
+
+// ========== MONTH SELECTION ==========
+function setMode(m){
+  curMode=m;
+  document.querySelectorAll('#modeB .mode-btn').forEach((b,i)=>b.classList.toggle('active',i===(m==='single'?0:1)));
+  if(m==='single'){
+    if(selM.length>1)selM=[selM[0]];
+    document.querySelectorAll('.month-chip').forEach(c=>c.classList.toggle('selected',selM.includes(c.dataset.m)));
+    document.getElementById('billToggle').classList.add('hidden');
+    document.getElementById('convToggle').classList.add('hidden');
+    setBillMode('same');setConvMode('same');
+    document.getElementById('mNote').textContent='Click to select month';
+  }else{
+    document.getElementById('billToggle').classList.remove('hidden');
+    document.getElementById('convToggle').classList.remove('hidden');
+    document.getElementById('mNote').textContent='Click to select multiple months';
+  }
+  buildStockTables();checkReady();
+}
+function buildChips(){
+  const yr=document.getElementById('yrSel').value,div=document.getElementById('mChips');div.innerHTML='';
+  MN.forEach(m=>{const c=document.createElement('div');c.className='month-chip';c.textContent=m+"'"+yr;c.dataset.m=m+"'"+yr;
+    if(selM.includes(c.dataset.m))c.classList.add('selected');c.onclick=()=>clickM(c);div.appendChild(c)});
+  updateDiffTables();buildStockTables();checkReady();
+}
+function clickM(chip){
+  const m=chip.dataset.m;
+  if(curMode==='single'){selM=[m];document.querySelectorAll('.month-chip').forEach(c=>c.classList.remove('selected'));chip.classList.add('selected')}
+  else{if(selM.includes(m)){selM=selM.filter(x=>x!==m);chip.classList.remove('selected')}else{selM.push(m);chip.classList.add('selected');selM=sortM(selM)}}
+  updateDiffTables();buildStockTables();checkReady();
+}
+
+// ========== RATE TABLES ==========
+function initBillSame(){const b=document.getElementById('billSameB');b.innerHTML='';SKUS.forEach(s=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${s}</td><td>${PACKS[s]}</td><td><input type="number" step=".01" id="bs_${s}" value="${BILL_D[s]}"></td>`;b.appendChild(tr)})}
+function initConvSame(){const b=document.getElementById('convSameB');b.innerHTML='';SKUS.forEach(s=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${s}</td><td>${PACKS[s]}</td><td><input type="number" step=".01" id="cs_${s}" value="${CONV_D[s]}"></td>`;b.appendChild(tr)})}
+
+function setBillMode(m){billMode=m;document.getElementById('bSame').classList.toggle('active',m==='same');document.getElementById('bDiff').classList.toggle('active',m==='diff');document.getElementById('billSameDiv').classList.toggle('hidden',m==='diff');document.getElementById('billDiffDiv').classList.toggle('hidden',m==='same');if(m==='diff')updateDiffTables()}
+function setConvMode(m){convMode=m;document.getElementById('cSame').classList.toggle('active',m==='same');document.getElementById('cDiff').classList.toggle('active',m==='diff');document.getElementById('convSameDiv').classList.toggle('hidden',m==='diff');document.getElementById('convDiffDiv').classList.toggle('hidden',m==='same');if(m==='diff')updateDiffTables()}
+
+function updateDiffTables(){
+  const ms=sortM([...selM]);
+  // Billing diff
+  const bt=document.getElementById('billDiffT');
+  if(!ms.length){bt.innerHTML='<tr><td style="padding:10px;color:#90a4ae;text-align:center">Select months first</td></tr>';document.getElementById('convDiffT').innerHTML=bt.innerHTML;return}
+  let h='<thead><tr><th>SKU</th><th>Pack</th>';ms.forEach(m=>h+=`<th>${m}</th>`);h+='</tr></thead><tbody>';
+  SKUS.forEach(s=>{h+=`<tr><td>${s}</td><td>${PACKS[s]}</td>`;ms.forEach(m=>h+=`<td><input type="number" step=".01" id="bd_${s}_${m.replace("'","_")}" value="${BILL_D[s]}"></td>`);h+='</tr>'});
+  h+='</tbody>';bt.innerHTML=h;
+  // Conv diff
+  const ct=document.getElementById('convDiffT');
+  h='<thead><tr><th>SKU</th><th>Pack</th>';ms.forEach(m=>h+=`<th>${m}</th>`);h+='</tr></thead><tbody>';
+  SKUS.forEach(s=>{h+=`<tr><td>${s}</td><td>${PACKS[s]}</td>`;ms.forEach(m=>h+=`<td><input type="number" step=".01" id="cd_${s}_${m.replace("'","_")}" value="${CONV_D[s]}"></td>`);h+='</tr>'});
+  h+='</tbody>';ct.innerHTML=h;
+}
+
+// ========== STOCK TABLES ==========
+function buildStockTables(){
+  const ms=sortM([...selM]);
+  // FG Stock
+  const ft=document.getElementById('fgStockT');
+  if(!ms.length){ft.innerHTML='<tr><td style="padding:10px;color:#90a4ae">Select month(s) first</td></tr>';document.getElementById('rmStockT').innerHTML=ft.innerHTML;return}
+  let h='<thead><tr><th>SKU</th><th>Pack</th>';
+  if(ms.length===1){h+=`<th>Opening (Cases)</th><th>Closing (Cases)</th>`}
+  else{h+=`<th>Opening<br>${ms[0]}</th>`;ms.forEach(m=>h+=`<th>Closing<br>${m}</th>`)}
+  h+='</tr></thead><tbody>';
+  SKUS.forEach(s=>{
+    h+=`<tr><td>${s}</td><td>${PACKS[s]}</td>`;
+    if(ms.length===1){h+=`<td><input type="number" id="fgo_${s}_0" value="0"></td><td><input type="number" id="fgc_${s}_0" value="0"></td>`}
+    else{h+=`<td><input type="number" id="fgo_${s}_0" value="0"></td>`;ms.forEach((_,i)=>h+=`<td><input type="number" id="fgc_${s}_${i}" value="0"></td>`)}
+    h+='</tr>';
+  });
+  h+='</tbody>';ft.innerHTML=h;
+
+  // RMPM Stock
+  const rt=document.getElementById('rmStockT');
+  h='<thead><tr><th>Material</th><th>Unit</th>';
+  if(ms.length===1){h+=`<th>Opening</th><th>Closing</th>`}
+  else{h+=`<th>Opening<br>${ms[0]}</th>`;ms.forEach(m=>h+=`<th>Closing<br>${m}</th>`)}
+  h+='</tr></thead><tbody>';
+  MATERIALS.forEach((mat,mi)=>{
+    h+=`<tr><td style="font-size:9px">${mat.n}</td><td>${mat.u}</td>`;
+    if(ms.length===1){h+=`<td><input type="number" step=".01" id="rmo_${mi}_0" value="0"></td><td><input type="number" step=".01" id="rmc_${mi}_0" value="0"></td>`}
+    else{h+=`<td><input type="number" step=".01" id="rmo_${mi}_0" value="0"></td>`;ms.forEach((_,i)=>h+=`<td><input type="number" step=".01" id="rmc_${mi}_${i}" value="0"></td>`)}
+    h+='</tr>';
+  });
+  h+='</tbody>';rt.innerHTML=h;
+}
+
+// ========== COLLAPSIBLE ==========
+function toggleCollapse(el){el.classList.toggle('open');el.nextElementSibling.classList.toggle('open')}
+
+// ========== FILE HANDLING ==========
+function loadF(inp,t){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+    if(t==='p'){pData=wb;document.getElementById('pFN').textContent=f.name;document.getElementById('pUp').classList.add('done')}
+    else{sData=wb;document.getElementById('sFN').textContent=f.name;document.getElementById('sUp').classList.add('done')}
+    checkReady()};
+  r.readAsArrayBuffer(f);
+}
+['pUp','sUp'].forEach(id=>{const el=document.getElementById(id);
+  el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('dragover')});
+  el.addEventListener('dragleave',()=>el.classList.remove('dragover'));
+  el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('dragover');
+    const t=id==='pUp'?'p':'s',fid=t==='p'?'pFile':'sFile';
+    const dt=new DataTransfer();dt.items.add(e.dataTransfer.files[0]);document.getElementById(fid).files=dt.files;loadF(document.getElementById(fid),t)})});
+function checkReady(){document.getElementById('calcBtn').disabled=!(pData&&sData&&selM.length>0)}
+function showSt(msg,t){const b=document.getElementById('statusBar');b.textContent=msg;b.className='status show '+t}
+
+// ========== GET RATES FROM UI ==========
+function getBillRates(){
+  const r={},ms=sortM([...selM]),isSame=curMode==='single'||billMode==='same';
+  if(isSame){const b={};SKUS.forEach(s=>b[s]=+(document.getElementById(`bs_${s}`).value)||0);ms.forEach(m=>r[m]={...b})}
+  else ms.forEach(m=>{r[m]={};SKUS.forEach(s=>{const el=document.getElementById(`bd_${s}_${m.replace("'","_")}`);r[m][s]=el?+el.value||0:BILL_D[s]})});
+  return r;
+}
+function getConvRates(){
+  const r={},ms=sortM([...selM]),isSame=curMode==='single'||convMode==='same';
+  if(isSame){const b={};SKUS.forEach(s=>b[s]=+(document.getElementById(`cs_${s}`).value)||0);ms.forEach(m=>r[m]={...b})}
+  else ms.forEach(m=>{r[m]={};SKUS.forEach(s=>{const el=document.getElementById(`cd_${s}_${m.replace("'","_")}`);r[m][s]=el?+el.value||0:CONV_D[s]})});
+  return r;
+}
+function getFGStock(){
+  const ms=sortM([...selM]),r={};
+  ms.forEach((m,i)=>{
+    r[m]={open:{},close:{}};
+    SKUS.forEach(s=>{
+      if(i===0)r[m].open[s]=+(document.getElementById(`fgo_${s}_0`).value)||0;
+      else r[m].open[s]=r[ms[i-1]].close[s]; // auto-link
+      r[m].close[s]=+(document.getElementById(`fgc_${s}_${i}`).value)||0;
+    });
+  });
+  return r;
+}
+function getRMStock(){
+  const ms=sortM([...selM]),r={};
+  ms.forEach((m,i)=>{
+    r[m]={open:{},close:{}};
+    MATERIALS.forEach((mat,mi)=>{
+      if(i===0)r[m].open[mat.n]=+(document.getElementById(`rmo_${mi}_0`).value)||0;
+      else r[m].open[mat.n]=r[ms[i-1]].close[mat.n];
+      r[m].close[mat.n]=+(document.getElementById(`rmc_${mi}_${i}`).value)||0;
+    });
+  });
+  return r;
+}
+
+// ========== MAIN CALCULATION ==========
+function calculate(){
+try{
+  showSt('Parsing...','info');
+  const billR=getBillRates(),convR=getConvRates(),fgSt=getFGStock(),rmSt=getRMStock();
+
+  // PARSE PURCHASE
+  let pSN=null;['Purchase - Raw Materials','Purchase - Raw Material','Purchase Register','Sheet1'].forEach(n=>{if(!pSN&&pData.Sheets[n])pSN=n});
+  if(!pSN)pSN=pData.SheetNames[0];
+  const pR=XLSX.utils.sheet_to_json(pData.Sheets[pSN],{header:1,defval:null,raw:false});
+  let pSt=9;for(let i=0;i<Math.min(20,pR.length);i++){if(pR[i]&&pR[i].some(c=>c&&/quantity/i.test(String(c)))&&pR[i].some(c=>c&&/rate/i.test(String(c)))){pSt=i+1;break}}
+
+  const purchases={};let cDt=null,cFr=0,cIt=[];
+  function flush(){if(!cIt.length||!cDt){cIt=[];cFr=0;return}const mo=gMS(cDt);if(!mo){cIt=[];cFr=0;return}if(!purchases[mo])purchases[mo]={};const tv=cIt.reduce((s,[,q,r])=>s+q*r,0);cIt.forEach(([mat,qty,rate])=>{const v=qty*rate,f=(tv>0&&cFr)?cFr*(v/tv):0;if(!purchases[mo][mat])purchases[mo][mat]={qty:0,pa:0,fr:0,gr:0};purchases[mo][mat].qty+=qty;purchases[mo][mat].pa+=v;purchases[mo][mat].fr+=f;purchases[mo][mat].gr+=v+f});cIt=[];cFr=0}
+  for(let i=pSt;i<pR.length;i++){const row=pR[i];if(!row)continue;const dt=pD(row[0]),c8=pN(row[7]),c9=pN(row[8]),c10=pN(row[9]),c15=pN(row[14]);
+    if(c10!==null&&c9===null){flush();if(dt)cDt=dt;cFr=c15||0;cIt=[]}
+    else if(c9!==null&&c10===null){const mat=row[1]?String(row[1]).trim():'';const q=c8||0;if(mat&&q>0)cIt.push([mat,q,c9])}}
+  flush();
+  for(const m in purchases)for(const mat in purchases[m]){const d=purchases[m][mat];d.rate=d.qty?d.gr/d.qty:0}
+
+  // PARSE SALES
+  let sSN=null;['Sales Register','Sales','Sheet1'].forEach(n=>{if(!sSN&&sData.Sheets[n])sSN=n});
+  if(!sSN)sSN=sData.SheetNames[0];
+  const sR=XLSX.utils.sheet_to_json(sData.Sheets[sSN],{header:1,defval:null,raw:false});
+  let sSt=7;for(let i=0;i<Math.min(20,sR.length);i++){if(sR[i]&&sR[i].some(c=>c&&/quantity/i.test(String(c)))&&sR[i].some(c=>c&&/rate/i.test(String(c)))){sSt=i+1;break}}
+  const sales={};let sCD=null;
+  for(let i=sSt;i<sR.length;i++){const row=sR[i];if(!row)continue;const dt=pD(row[0]),desc=row[1],qty=pN(row[5]),rate=pN(row[6]);
+    if(dt){sCD=dt;continue}if(desc&&qty&&rate&&sCD){const mo=gMS(sCD);if(!mo)continue;const sku=gSku(desc);if(!sku)continue;if(!sales[mo])sales[mo]={};if(!sales[mo][sku])sales[mo][sku]={cases:0,amt:0};sales[mo][sku].cases+=qty;sales[mo][sku].amt+=qty*rate}}
+
+  // COMPUTE
+  const SM=sortM([...selM]);
+  function getRate(mo,ml){let tq=0,ta=0;ml.forEach(mat=>{if(purchases[mo]&&purchases[mo][mat]){tq+=purchases[mo][mat].qty;ta+=purchases[mo][mat].gr}});if(tq===0)SM.forEach(m2=>ml.forEach(mat=>{if(purchases[m2]&&purchases[m2][mat]){tq+=purchases[m2][mat].qty;ta+=purchases[m2][mat].gr}}));if(tq===0)for(const m2 in purchases)ml.forEach(mat=>{if(purchases[m2]&&purchases[m2][mat]){tq+=purchases[m2][mat].qty;ta+=purchases[m2][mat].gr}});return tq?ta/tq:0}
+  function compCost(mo,sku){const pk=PACKS[sku],mats=SKU_MATS[sku]||{},r={};r.Preform=mats.Preform?getRate(mo,mats.Preform)*pk:0;if(mats.Label){const rt=getRate(mo,mats.Label);r.Label=BOM_LABEL[sku]?rt*BOM_LABEL[sku]:(BOM_LABEL_JAR[sku]?rt*BOM_LABEL_JAR[sku]*pk:0)}else r.Label=0;if(['200ml','250ml','500ml','1Ltr','2Ltr'].includes(sku))r.Cap=getRate(mo,PET_CAPS)*pk;else if(['5Ltr','10Ltr'].includes(sku))r.Cap=getRate(mo,JAR_CAPS)*pk;else if(mats.Cap)r.Cap=getRate(mo,mats.Cap)*pk;else r.Cap=0;if(['200ml','250ml'].includes(sku))r.Shrink=getRate(mo,SHRINK_250_200)*(BOM_SHRINK[sku]||0);else if(mats.Shrink)r.Shrink=getRate(mo,mats.Shrink)*(BOM_SHRINK[sku]||0);else r.Shrink=0;r.Sleeve=mats.Sleeve?getRate(mo,mats.Sleeve)*(1/20):0;r.Handle=mats.Handle?getRate(mo,mats.Handle)*pk:0;r.Jar=mats.Jar?getRate(mo,mats.Jar)*pk:0;r.Total=COMPS.reduce((s,c)=>s+(r[c]||0),0);return r}
+
+  const allR=[],grand={cases:0,bill:0,rmpm:0,conv:0,rd:0},mTot={},sTot={};
+  SKUS.forEach(s=>sTot[s]={cases:0,bill:0,rmpm:0,conv:0,rd:0});
+
+  // Production & Wastage
+  const prodData={},wasteData={};
+  let totalWasteCost=0,hasStock=false;
+
+  SM.forEach(mo=>{
+    const mt={cases:0,bill:0,rmpm:0,conv:0,rd:0};
+    const br=billR[mo]||{},cr=convR[mo]||{};
+    const prod={};
+    SKUS.forEach(sku=>{
+      const sd=(sales[mo]&&sales[mo][sku])?sales[mo][sku]:{cases:0,amt:0};
+      const cases=Math.round(sd.cases);
+      const dispatch=cases;
+      const openFG=(fgSt[mo]&&fgSt[mo].open)?fgSt[mo].open[sku]||0:0;
+      const closeFG=(fgSt[mo]&&fgSt[mo].close)?fgSt[mo].close[sku]||0:0;
+      const production=dispatch+closeFG-openFG;
+      prod[sku]={dispatch,openFG,closeFG,production};
+      if(openFG||closeFG)hasStock=true;
+
+      const billRate=br[sku]||0,cost=compCost(mo,sku),cv=cr[sku]||0,tc=cost.Total+cv;
+      const rd=billRate-tc,rdAmt=rd*cases,billAmt=billRate*cases;
+      allR.push({mo,sku,cases,billRate,billAmt,cost,conv:cv,tc,rd,rdAmt,dispatch,openFG,closeFG,production});
+      mt.cases+=cases;mt.bill+=billAmt;mt.rmpm+=cost.Total*cases;mt.conv+=cv*cases;mt.rd+=rdAmt;
+      sTot[sku].cases+=cases;sTot[sku].bill+=billAmt;sTot[sku].rmpm+=cost.Total*cases;sTot[sku].conv+=cv*cases;sTot[sku].rd+=rdAmt;
+    });
+    mTot[mo]=mt;grand.cases+=mt.cases;grand.bill+=mt.bill;grand.rmpm+=mt.rmpm;grand.conv+=mt.conv;grand.rd+=mt.rd;
+    prodData[mo]=prod;
+
+    // Wastage per material
+    const wm={};
+    MATERIALS.forEach(mat=>{
+      const n=mat.n;
+      const openRM=(rmSt[mo]&&rmSt[mo].open)?rmSt[mo].open[n]||0:0;
+      const closeRM=(rmSt[mo]&&rmSt[mo].close)?rmSt[mo].close[n]||0:0;
+      const purchased=(purchases[mo]&&purchases[mo][n])?purchases[mo][n].qty:0;
+      const rate=(purchases[mo]&&purchases[mo][n])?purchases[mo][n].rate:0;
+      if(openRM||closeRM)hasStock=true;
+      const totalAvail=openRM+purchased;
+      const consumed=totalAvail-closeRM;
+      // Required = sum of production[sku] * bomPerCase(mat,sku) for all SKUs
+      let required=0;
+      SKUS.forEach(sku=>{const bpc=bomPerCase(n,sku);if(bpc>0)required+=prod[sku].production*bpc});
+      const wastage=consumed-required;
+      const wastePct=consumed>0?(wastage/consumed*100):0;
+      const excessPct=Math.max(0,wastePct-1);
+      const excessQty=consumed>0?(excessPct/100*consumed):0;
+      const excessCost=excessQty*rate;
+      wm[n]={openRM,closeRM,purchased,totalAvail,consumed,required,wastage,wastePct,excessPct,excessQty,excessCost,rate,unit:mat.u};
+      if(excessCost>0)totalWasteCost+=excessCost;
+    });
+    wasteData[mo]=wm;
+  });
+
+  CR={allR,grand,mTot,sTot,SM,purchases,sales,billR,convR,prodData,wasteData,totalWasteCost,hasStock};
+  showSt(`Done! ${SM.length} month(s), ${grand.cases.toLocaleString('en-IN')} cases.`,'success');
+  render();
+}catch(err){showSt('Error: '+err.message,'error');console.error(err)}}
+
+// ========== RENDER ==========
+function f2(n){return n?n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}):'0.00'}
+function fI(n){return n?n.toLocaleString('en-IN'):'0'}
+function rc(v){return v>=0?'pos':'neg'}
+
+function render(){
+  const{grand,mTot,sTot,SM,allR,totalWasteCost,hasStock}=CR;
+  document.getElementById('results').style.display='block';
+
+  // VERDICT
+  const netRD=grand.rd-totalWasteCost;
+  const vb=document.getElementById('vBox');
+  const isSurplus=netRD>=0;
+  vb.className='verdict '+(isSurplus?'surplus':'deficit');
+  document.getElementById('vTitle').textContent=isSurplus?'SURPLUS — Billing covers cost':'DEFICIT — Bisleri needs to pay';
+  const abs=Math.abs(netRD);
+  document.getElementById('vAmt').textContent=(isSurplus?'+':'-')+' ₹'+(abs>=10000000?f2(abs/10000000)+' Cr':f2(abs/100000)+' Lakhs');
+  let det=`Billing: ₹${f2(grand.bill/100000)}L | RMPM: ₹${f2(grand.rmpm/100000)}L | Conv: ₹${f2(grand.conv/100000)}L | RD: ₹${f2(grand.rd/100000)}L`;
+  document.getElementById('vDetail').textContent=det;
+  if(hasStock&&totalWasteCost>0){
+    document.getElementById('vWaste').innerHTML=`⚠️ <b>Wastage Liability (>1%): ₹${f2(totalWasteCost)}</b> | Net after wastage: ₹${f2(netRD/100000)}L`;
+    document.getElementById('vWaste').style.display='';
+  }else if(hasStock){
+    document.getElementById('vWaste').innerHTML='✅ Wastage within 1% limit — no additional payment';
+    document.getElementById('vWaste').style.display='';
+  }else{document.getElementById('vWaste').style.display='none'}
+
+  // SUMMARY BOXES
+  document.getElementById('sGrid').innerHTML=`
+    <div class="sbox blue"><div class="sl">Cases</div><div class="sv">${fI(grand.cases)}</div></div>
+    <div class="sbox blue"><div class="sl">Billing</div><div class="sv">₹${f2(grand.bill/100000)}L</div></div>
+    <div class="sbox"><div class="sl">RMPM Cost</div><div class="sv">₹${f2(grand.rmpm/100000)}L</div></div>
+    <div class="sbox"><div class="sl">Conv Cost</div><div class="sv">₹${f2(grand.conv/100000)}L</div></div>
+    <div class="sbox ${grand.rd>=0?'green':'red'}"><div class="sl">Rate Diff</div><div class="sv">${grand.rd>=0?'+':''}₹${f2(grand.rd/100000)}L</div></div>
+    <div class="sbox ${totalWasteCost>0?'orange':'green'}"><div class="sl">Wastage Cost</div><div class="sv">₹${f2(totalWasteCost)}</div></div>`;
+
+  // TABS
+  const tabs=['Month Summary','SKU Summary','RD Working','Per Case Cost','Production','Wastage Analysis'];
+  const tb=document.getElementById('tabBar'),tc=document.getElementById('tabC');tb.innerHTML='';tc.innerHTML='';
+  tabs.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='tab'+(i===0?' active':'');d.textContent=t;
+    d.onclick=()=>{document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.tc').forEach(e=>e.classList.remove('active'));d.classList.add('active');document.getElementById('t'+i).classList.add('active')};
+    tb.appendChild(d);
+    const c=document.createElement('div');c.className='tc'+(i===0?' active':'');c.id='t'+i;tc.appendChild(c);
+  });
+
+  // T0: Month Summary
+  let h='<table class="dt"><tr><th>Month</th><th>Cases</th><th>Billing (₹)</th><th>RMPM (₹)</th><th>Conv (₹)</th><th>Total Cost (₹)</th><th>RD (₹)</th></tr>';
+  SM.forEach(m=>{const t=mTot[m];h+=`<tr><td>${m}</td><td>${fI(t.cases)}</td><td>${f2(t.bill)}</td><td>${f2(t.rmpm)}</td><td>${f2(t.conv)}</td><td>${f2(t.rmpm+t.conv)}</td><td class="${rc(t.rd)}">${f2(t.rd)}</td></tr>`});
+  h+=`<tr class="tr"><td>TOTAL</td><td>${fI(grand.cases)}</td><td>${f2(grand.bill)}</td><td>${f2(grand.rmpm)}</td><td>${f2(grand.conv)}</td><td>${f2(grand.rmpm+grand.conv)}</td><td class="${rc(grand.rd)}">${f2(grand.rd)}</td></tr></table>`;
+  document.getElementById('t0').innerHTML=h;
+
+  // T1: SKU Summary
+  h='<table class="dt"><tr><th>SKU</th><th>Pack</th><th>Cases</th><th>Bill ₹/cs</th><th>RMPM ₹/cs</th><th>Conv ₹/cs</th><th>Cost ₹/cs</th><th>RD ₹/cs</th><th>Total RD (₹)</th></tr>';
+  SKUS.forEach(s=>{const t=sTot[s],c=t.cases;h+=`<tr><td>${s}</td><td>${PACKS[s]}</td><td>${fI(c)}</td><td>${f2(c?t.bill/c:0)}</td><td>${f2(c?t.rmpm/c:0)}</td><td>${f2(c?t.conv/c:0)}</td><td>${f2(c?(t.rmpm+t.conv)/c:0)}</td><td class="${rc(t.rd)}">${f2(c?t.rd/c:0)}</td><td class="${rc(t.rd)}">${f2(t.rd)}</td></tr>`});
+  h+='</table>';document.getElementById('t1').innerHTML=h;
+
+  // T2: RD Working
+  h='<table class="dt"><tr><th>Month</th><th>SKU</th><th>Cases</th><th>Bill ₹/cs</th><th>RMPM ₹/cs</th><th>Conv ₹/cs</th><th>Total ₹/cs</th><th>RD ₹/cs</th><th>RD Amt (₹)</th></tr>';
+  SM.forEach(mo=>{
+    h+=`<tr class="mh"><td colspan="9">${mo}</td></tr>`;
+    allR.filter(r=>r.mo===mo&&r.cases>0).forEach(d=>{h+=`<tr><td>${mo}</td><td>${d.sku}</td><td>${fI(d.cases)}</td><td>${f2(d.billRate)}</td><td>${f2(d.cost.Total)}</td><td>${f2(d.conv)}</td><td>${f2(d.tc)}</td><td class="${rc(d.rd)}">${f2(d.rd)}</td><td class="${rc(d.rdAmt)}">${f2(d.rdAmt)}</td></tr>`});
+    const t=mTot[mo];h+=`<tr class="tr"><td colspan="2">${mo} Total</td><td>${fI(t.cases)}</td><td></td><td></td><td></td><td></td><td></td><td class="${rc(t.rd)}">${f2(t.rd)}</td></tr>`;
+  });
+  h+=`<tr class="tr" style="background:#d0e3f7"><td colspan="2">GRAND TOTAL</td><td>${fI(grand.cases)}</td><td></td><td></td><td></td><td></td><td></td><td class="${rc(grand.rd)}">${f2(grand.rd)}</td></tr></table>`;
+  document.getElementById('t2').innerHTML=h;
+
+  // T3: Per Case Cost
+  h='';SM.forEach(mo=>{
+    h+=`<div class="section-title">${mo}</div><table class="dt"><tr><th>SKU</th><th>Cases</th><th>Preform</th><th>Label</th><th>Cap</th><th>Shrink</th><th>Sleeve</th><th>Handle</th><th>Jar</th><th>RMPM</th><th>Conv</th><th>Total</th><th>Billing</th><th>RD</th></tr>`;
+    allR.filter(r=>r.mo===mo).forEach(d=>{const hl=d.cases>0&&d.rd<0?' style="background:#fef5f5"':'';h+=`<tr${hl}><td>${d.sku}</td><td>${fI(d.cases)}</td><td>${f2(d.cost.Preform)}</td><td>${f2(d.cost.Label)}</td><td>${f2(d.cost.Cap)}</td><td>${f2(d.cost.Shrink)}</td><td>${f2(d.cost.Sleeve)}</td><td>${f2(d.cost.Handle)}</td><td>${f2(d.cost.Jar)}</td><td><b>${f2(d.cost.Total)}</b></td><td>${f2(d.conv)}</td><td><b>${f2(d.tc)}</b></td><td>${f2(d.billRate)}</td><td class="${rc(d.rd)}"><b>${f2(d.rd)}</b></td></tr>`});
+    h+='</table>';
+  });document.getElementById('t3').innerHTML=h;
+
+  // T4: Production
+  h='';SM.forEach(mo=>{
+    h+=`<div class="section-title">${mo} — Production Summary</div><table class="dt"><tr><th>SKU</th><th>Opening FG</th><th>Production</th><th>Dispatch</th><th>Closing FG</th></tr>`;
+    let tO=0,tP=0,tD=0,tC=0;
+    SKUS.forEach(s=>{const p=CR.prodData[mo][s];h+=`<tr><td>${s}</td><td>${fI(p.openFG)}</td><td>${fI(p.production)}</td><td>${fI(p.dispatch)}</td><td>${fI(p.closeFG)}</td></tr>`;tO+=p.openFG;tP+=p.production;tD+=p.dispatch;tC+=p.closeFG});
+    h+=`<tr class="tr"><td>TOTAL</td><td>${fI(tO)}</td><td>${fI(tP)}</td><td>${fI(tD)}</td><td>${fI(tC)}</td></tr></table>`;
+    h+=`<p class="note">Production = Dispatch + Closing FG − Opening FG</p>`;
+  });document.getElementById('t4').innerHTML=h;
+
+  // T5: Wastage Analysis
+  h='';SM.forEach(mo=>{
+    const wd=CR.wasteData[mo];let anyWaste=false;
+    h+=`<div class="section-title">${mo} — Wastage Analysis</div><table class="dt"><tr><th>Material</th><th>Unit</th><th>Opening</th><th>Purchase</th><th>Available</th><th>Closing</th><th>Consumed</th><th>Required (BOM)</th><th>Wastage</th><th>Wastage %</th><th>Excess >1%</th><th>Excess Cost (₹)</th></tr>`;
+    MATERIALS.forEach(mat=>{
+      const w=wd[mat.n];if(!w||(!w.consumed&&!w.required))return;
+      anyWaste=true;
+      const warnCls=w.wastePct>1?'warn':'';
+      h+=`<tr><td style="font-size:9px">${mat.n}</td><td>${w.unit}</td><td>${f2(w.openRM)}</td><td>${f2(w.purchased)}</td><td>${f2(w.totalAvail)}</td><td>${f2(w.closeRM)}</td><td>${f2(w.consumed)}</td><td>${f2(w.required)}</td><td class="${warnCls}">${f2(w.wastage)}</td><td class="${warnCls}">${f2(w.wastePct)}%</td><td class="${warnCls}">${f2(w.excessPct)}%</td><td class="${warnCls}">${f2(w.excessCost)}</td></tr>`;
+    });
+    if(!anyWaste)h+='<tr><td colspan="12" style="text-align:center;color:#90a4ae;padding:10px">No stock data entered — enter Opening & Closing stock in Step 5</td></tr>';
+    h+='</table>';
+  });
+  if(totalWasteCost>0)h+=`<div style="margin-top:8px;padding:10px;background:#fff8e1;border:1px solid #ffcc80;border-radius:6px;font-size:12px"><b style="color:#e65100">⚠️ Total Wastage Liability (>1%): ₹${f2(totalWasteCost)}</b><br>Bisleri allows up to 1% wastage. Amount above is for excess wastage only.</div>`;
+  else if(hasStock)h+=`<div style="margin-top:8px;padding:10px;background:#f1f8f2;border:1px solid #a5d6a7;border-radius:6px;font-size:12px"><b style="color:#2e7d32">✅ All wastage within 1% limit — no additional payment required</b></div>`;
+  document.getElementById('t5').innerHTML=h;
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+// ========== EXCEL DOWNLOAD ==========
+function dlExcel(){
+  if(!CR)return;const{allR,grand,mTot,sTot,SM,purchases,billR,convR,prodData,wasteData,totalWasteCost}=CR;
+  const wb=XLSX.utils.book_new();
+
+  // S1: Summary
+  const s1=[['RATE DIFFERENCE & WASTAGE SUMMARY'],['M/s Aambika Food & Beverages LLP | Co-Packer of Bisleri International Pvt. Ltd.'],[],
+    ['','Amount (Rs)','In Lakhs','In Crores'],
+    ['A. Total Billing (Excl GST)',grand.bill,grand.bill/1e5,grand.bill/1e7],
+    ['B. RMPM Cost',grand.rmpm,grand.rmpm/1e5,grand.rmpm/1e7],
+    ['C. Conversion Cost',grand.conv,grand.conv/1e5,grand.conv/1e7],
+    ['D. Total Cost (B+C)',grand.rmpm+grand.conv,(grand.rmpm+grand.conv)/1e5,(grand.rmpm+grand.conv)/1e7],
+    ['E. Rate Difference (A-D)',grand.rd,grand.rd/1e5,grand.rd/1e7],
+    ['F. Wastage Liability (>1%)',totalWasteCost,totalWasteCost/1e5,totalWasteCost/1e7],
+    ['G. Net RD after Wastage (E-F)',grand.rd-totalWasteCost,(grand.rd-totalWasteCost)/1e5,(grand.rd-totalWasteCost)/1e7],
+    [],[],['MONTH-WISE'],['Month','Cases','Billing','RMPM','Conv','Total Cost','RD']];
+  SM.forEach(m=>{const t=mTot[m];s1.push([m,t.cases,t.bill,t.rmpm,t.conv,t.rmpm+t.conv,t.rd])});
+  s1.push(['TOTAL',grand.cases,grand.bill,grand.rmpm,grand.conv,grand.rmpm+grand.conv,grand.rd]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s1),'Summary');
+
+  // S2: RD Working
+  const s2=[['RD WORKING'],[],['Month','SKU','Pack','Cases','Billing Rs/cs','RMPM Rs/cs','Conv Rs/cs','Total Rs/cs','RD Rs/cs','RD Amt','Billing Amt','RMPM Amt']];
+  SM.forEach(mo=>{s2.push([mo]);allR.filter(r=>r.mo===mo&&r.cases>0).forEach(d=>{s2.push([d.mo,d.sku,PACKS[d.sku],d.cases,d.billRate,d.cost.Total,d.conv,d.tc,d.rd,d.rdAmt,d.billAmt,d.cost.Total*d.cases])});const t=mTot[mo];s2.push([mo+' Total','','',t.cases,'','','','','',t.rd,t.bill,t.rmpm])});
+  s2.push(['GRAND TOTAL','','',grand.cases,'','','','','',grand.rd,grand.bill,grand.rmpm]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s2),'RD Working');
+
+  // S3: Per Case Cost
+  const s3=[['PER CASE COST'],[]];
+  SM.forEach(mo=>{s3.push([mo]);s3.push(['SKU','Pack','Cases','Preform','Label','Cap','Shrink','Sleeve','Handle','Jar','RMPM Total','Conv','Total Cost','Billing','RD']);
+    allR.filter(r=>r.mo===mo).forEach(d=>{s3.push([d.sku,PACKS[d.sku],d.cases,d.cost.Preform,d.cost.Label,d.cost.Cap,d.cost.Shrink,d.cost.Sleeve,d.cost.Handle,d.cost.Jar,d.cost.Total,d.conv,d.tc,d.billRate,d.rd])});s3.push([])});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s3),'Per Case Cost');
+
+  // S4: Production
+  const s4=[['PRODUCTION SUMMARY'],[]];
+  SM.forEach(mo=>{s4.push([mo]);s4.push(['SKU','Opening FG','Production','Dispatch','Closing FG']);
+    SKUS.forEach(s=>{const p=prodData[mo][s];s4.push([s,p.openFG,p.production,p.dispatch,p.closeFG])});s4.push([])});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s4),'Production');
+
+  // S5: Wastage
+  const s5=[['WASTAGE ANALYSIS'],['Allowed: Up to 1% | Excess >1% payable to Bisleri'],[]];
+  SM.forEach(mo=>{const wd=wasteData[mo];s5.push([mo]);s5.push(['Material','Unit','Opening','Purchase','Available','Closing','Consumed','Required (BOM)','Wastage','Wastage %','Excess >1%','Excess Cost (Rs)']);
+    MATERIALS.forEach(mat=>{const w=wd[mat.n];if(!w||(!w.consumed&&!w.required))return;s5.push([mat.n,w.unit,w.openRM,w.purchased,w.totalAvail,w.closeRM,w.consumed,w.required,w.wastage,w.wastePct/100,w.excessPct/100,w.excessCost])});
+    s5.push([]);s5.push(['Total Wastage Cost (>1%)',totalWasteCost]);s5.push([])});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s5),'Wastage');
+
+  // S6: Purchase Summary
+  const s6=[['PURCHASE SUMMARY'],[]];
+  SM.forEach(mo=>{const pr=purchases[mo];if(!pr)return;s6.push([mo]);s6.push(['Material','Qty','Purchase Rs','Freight Rs','Gross Rs','Rate Rs/unit']);
+    Object.keys(pr).sort().forEach(mat=>{const d=pr[mat];s6.push([mat,d.qty,d.pa,d.fr,d.gr,d.rate])});s6.push([])});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s6),'Purchases');
+
+  // S7: Rates & BOM
+  const s7=[['BILLING & CONVERSION RATES'],['SKU','Pack']];SM.forEach(m=>s7[1].push('Bill '+m));SM.forEach(m=>s7[1].push('Conv '+m));
+  SKUS.forEach(s=>{const row=[s,PACKS[s]];SM.forEach(m=>row.push(billR[m]?billR[m][s]:0));SM.forEach(m=>row.push(convR[m]?convR[m][s]:0));s7.push(row)});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(s7),'Rates & BOM');
+
+  const fn=SM.length===1?`RD Working ${SM[0]}.xlsx`:`RD Working ${SM[0]} to ${SM[SM.length-1]}.xlsx`;
+  XLSX.writeFile(wb,fn);
+}
+
+// ========== INIT ==========
+initBillSame();initConvSame();buildChips();setMode('single');
+</script>
+</body>
+</html>
